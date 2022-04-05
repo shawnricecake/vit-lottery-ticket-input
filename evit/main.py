@@ -185,6 +185,10 @@ def get_args_parser():
                         help='')
     parser.set_defaults(pin_mem=True)
 
+    #########################################################################################################
+    parser.add_argument('--lottery', default='', help='run lottery experiment, and set the pretrained model path')
+    #########################################################################################################
+
     # distributed training parameters
     parser.add_argument('--world_size', default=1, type=int,
                         help='number of distributed processes')
@@ -274,6 +278,29 @@ def main(args):
         fuse_token=args.fuse_token,
         img_size=(args.input_size, args.input_size)
     )
+
+    #########################################################################################################
+    model_pretrained = None
+    if args.lottery:
+        model_pretrained = create_model(
+            args.model,
+            base_keep_rate=args.base_keep_rate,
+            drop_loc=eval(args.drop_loc),
+            pretrained=False,
+            num_classes=args.nb_classes,
+            drop_rate=args.drop,
+            drop_path_rate=args.drop_path,
+            drop_block_rate=None,
+            fuse_token=args.fuse_token,
+            img_size=(args.input_size, args.input_size)
+        )
+        checkpoint = torch.load(args.lottery, map_location='cpu')
+        checkpoint = checkpoint['model']
+        missing_keys, unexpected_keys = model_pretrained.load_state_dict(checkpoint, strict=False)
+        print('# missing keys=', missing_keys)
+        print('# unexpected keys=', unexpected_keys)
+        print('successfully loaded from given checkpoint weights:', args.lottery)
+    #########################################################################################################
 
     if args.finetune:
         if args.finetune.startswith('https'):
