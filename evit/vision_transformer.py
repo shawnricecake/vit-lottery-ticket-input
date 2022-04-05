@@ -313,7 +313,7 @@ class Attention(nn.Module):
 
             return x, index, idx, cls_attn, left_tokens
 
-        return  x, None, None, None, left_tokens
+        return x, None, None, None, left_tokens
 
 
 class Block(nn.Module):
@@ -334,6 +334,10 @@ class Block(nn.Module):
         self.mlp_hidden_dim = mlp_hidden_dim
         self.fuse_token = fuse_token
 
+        #####################################################
+        self.idx_record = None
+        #####################################################
+
     def forward(self, x, keep_rate=None, tokens=None):
         if keep_rate is None:
             keep_rate = self.keep_rate  # this is for inference, use the default keep rate
@@ -343,6 +347,11 @@ class Block(nn.Module):
         x = x + self.drop_path(tmp)
 
         if index is not None:
+
+            #####################################################
+            self.idx_record = index
+            #####################################################
+
             # B, N, C = x.shape
             non_cls = x[:, 1:]
             x_others = torch.gather(non_cls, dim=1, index=index)  # [B, left_tokens, C]
@@ -449,6 +458,10 @@ class VisionTransformer(nn.Module):
 
         self.init_weights(weight_init)
 
+        #####################################################
+        self.all_idx_record = None
+        #####################################################
+
     def init_weights(self, mode=''):
         assert mode in ('jax', 'jax_nlhb', 'nlhb', '')
         head_bias = -math.log(self.num_classes) if 'nlhb' in mode else 0.
@@ -519,6 +532,17 @@ class VisionTransformer(nn.Module):
             pos_embed = torch.cat([pos_embed[:, :self.num_tokens], new_pos], dim=1)
 
         x = self.pos_drop(x + pos_embed)
+
+        #####################################################
+        if self.all_idx_record is not None:
+            if self.all_idx_record == []:
+                assert "Error: got wrong pruning info"
+            non_cls = x[:, 1:]
+            for e in self.all_idx_record:
+                if e is not None:
+                    non_cls = torch.gather(non_cls, dim=1, index=e)  # [B, left_tokens, C]
+            x = torch.cat([x[:, 0:1], non_cls], dim=1)
+        #####################################################
 
         left_tokens = []
         for i, blk in enumerate(self.blocks):

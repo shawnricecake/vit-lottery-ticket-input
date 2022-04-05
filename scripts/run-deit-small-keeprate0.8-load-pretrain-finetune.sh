@@ -1,10 +1,10 @@
 cd ../evit/
 
 # Train as EViT, load pretrain model and finetune
-# Keep Rate 0.9
+# Keep Rate 0.8
 
 data_path="/home/ImageNet"
-save_path="../checkpoints/exp-deit-small-load-pretrain-finetune-keeprate0.9"
+save_path="../checkpoints/exp-deit-small-keeprate0.8-load-pretrain-finetune"
 mkdir -p $save_path
 
 
@@ -14,7 +14,7 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --use_env main.py \
         --model deit_small_patch16_shrink_base \
         --fuse_token \
-        --base_keep_rate 0.9 \
+        --base_keep_rate 0.8 \
         --input-size 224 \
         --sched cosine \
         --lr 2e-5 \
@@ -29,4 +29,4 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --finetune ../checkpoints/exp-deit-small-pretrain/checkpoint.pth \
         --data-path ${data_path} \
         --output_dir ${save_path} \
-> ../scripts/exp-deit-small-load-pretrain-finetune-keeprate0.9.txt 2>&1 &
+> ../scripts/exp-deit-small-keeprate0.8-load-pretrain-finetune.txt 2>&1 &

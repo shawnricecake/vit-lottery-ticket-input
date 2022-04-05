@@ -34,6 +34,7 @@ from tensorboardX import SummaryWriter
 import warnings
 warnings.filterwarnings('ignore', 'Argument interpolation should be of type InterpolationMode instead of int')
 
+import random
 
 def get_args_parser():
     parser = argparse.ArgumentParser('DeiT training and evaluation script', add_help=False)
@@ -187,6 +188,9 @@ def get_args_parser():
 
     #########################################################################################################
     parser.add_argument('--lottery', default='', help='run lottery experiment, and set the pretrained model path')
+    parser.add_argument('--adjust-keep-rate', action='store_true', default=False,
+                        help='use evit original adjust keep rate function')
+    parser.add_argument('--random', action='store_true', default=False, help='run RR experiment')
     #########################################################################################################
 
     # distributed training parameters
@@ -207,10 +211,10 @@ def main(args):
     device = torch.device(args.device)
 
     # fix the seed for reproducibility
-    seed = args.seed + utils.get_rank()
+    seed = args.seed #+ utils.get_rank()
     torch.manual_seed(seed)
     np.random.seed(seed)
-    # random.seed(seed)
+    random.seed(seed)
 
     cudnn.benchmark = True
 
@@ -268,7 +272,7 @@ def main(args):
     print(f"Creating model: {args.model}")
     model = create_model(
         args.model,
-        base_keep_rate=args.base_keep_rate,
+        base_keep_rate=args.base_keep_rate if not (args.lottery or args.random) else 1,
         drop_loc=eval(args.drop_loc),
         pretrained=False,
         num_classes=args.nb_classes,
@@ -466,7 +470,8 @@ def main(args):
             optimizer, device, epoch, loss_scaler,
             args.clip_grad, model_ema, mixup_fn, writer,
             set_training_mode=args.finetune == '',  # keep in eval mode during finetuning
-            args=args
+            args=args,
+            model_teacher=model_pretrained
         )
 
         lr_scheduler.step(epoch)
@@ -486,7 +491,25 @@ def main(args):
         test_interval = 30
         if epoch % test_interval == 0 or epoch == args.epochs - 1:
             test_stats = evaluate(data_loader_val, model, device, keep_rate)
-            print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
+            print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.3f}%")
+
+            ###################################################################
+            if max_accuracy < test_stats["acc1"]:
+                max_accuracy = test_stats["acc1"]
+                if args.output_dir:
+                    checkpoint_paths = [output_dir / 'best_checkpoint.pth']
+                    for checkpoint_path in checkpoint_paths:
+                        utils.save_on_master({
+                            'model': model_without_ddp.state_dict(),
+                            'optimizer': optimizer.state_dict(),
+                            'lr_scheduler': lr_scheduler.state_dict(),
+                            'epoch': epoch,
+                            'model_ema': get_state_dict(model_ema),
+                            'scaler': loss_scaler.state_dict(),
+                            'args': args,
+                        }, checkpoint_path)
+            ###################################################################
+
             max_accuracy = max(max_accuracy, test_stats["acc1"])
             print(f'Max accuracy: {max_accuracy:.2f}%')
             test_stats1 = {f'test_{k}': v for k, v in test_stats.items()}

@@ -27,7 +27,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
                     model_ema: Optional[ModelEma] = None, mixup_fn: Optional[Mixup] = None,
                     writer=None,
                     set_training_mode=True,
-                    args=None):
+                    args=None,
+                    model_pretrained=None):
     model.train(set_training_mode)
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -43,15 +44,50 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
         samples = samples.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
 
-        keep_rate = adjust_keep_rate(it, epoch, warmup_epochs=args.shrink_start_epoch,
-                                         total_epochs=args.shrink_start_epoch + args.shrink_epochs,
-                                         ITERS_PER_EPOCH=ITERS_PER_EPOCH, base_keep_rate=base_rate)
+        #####################################################
+        if args.adjust_keep_rate:
+            keep_rate = adjust_keep_rate(it, epoch, warmup_epochs=args.shrink_start_epoch,
+                                             total_epochs=args.shrink_start_epoch + args.shrink_epochs,
+                                             ITERS_PER_EPOCH=ITERS_PER_EPOCH, base_keep_rate=base_rate)
+        else:
+            keep_rate = base_rate
+        #####################################################
 
         if mixup_fn is not None:
             samples, targets = mixup_fn(samples, targets)
 
         with torch.cuda.amp.autocast():
-            outputs = model(samples, keep_rate)
+
+            #####################################################
+            if args.lottery and model_pretrained is not None:
+                outputs = model_pretrained(samples, keep_rate)
+                all_index_record = []
+                for e in model_pretrained.blocks:
+                    all_index_record.append(e.idx_record)
+                model.all_idx_record = all_index_record
+            elif args.random:
+                if "small" in args.model:
+                    N = 197
+                    repeat = 384
+                else:
+                    assert "Error: have not support this kind model: {}".format(args.model)
+                all_index_record = []
+                left_tokens = math.ceil(keep_rate * (N - 1))
+                mask1 = torch.randn(1, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
+                mask1 = mask1.repeat(1, 1, repeat)
+                all_index_record.append(mask1)
+                left_tokens = math.ceil(keep_rate * left_tokens)
+                mask2 = torch.randn(1, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
+                mask2 = mask2.repeat(1, 1, repeat)
+                all_index_record.append(mask2)
+                left_tokens = math.ceil(keep_rate * left_tokens)
+                mask3 = torch.randn(1, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
+                mask3 = mask3.repeat(1, 1, repeat)
+                all_index_record.append(mask3)
+                model.all_idx_record = all_index_record
+            #####################################################
+
+            outputs = model(samples, keep_rate=keep_rate if not (args.lottery or args.random) else None)
             loss = criterion(samples, outputs, targets)
 
         loss_value = loss.item()
