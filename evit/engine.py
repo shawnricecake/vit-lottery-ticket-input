@@ -72,21 +72,24 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
                 else:
                     assert "Error: have not support this kind model: {}".format(args.model)
                 all_index_record = []
+                left_tokens_pre = N - 1
                 left_tokens = math.ceil(keep_rate * (N - 1))
                 mask1 = torch.rand(1, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
-                mask1 = mask1 * (N-1)
+                mask1 = mask1 * left_tokens_pre
                 mask1 = mask1.type(torch.int)
                 mask1 = mask1.repeat(1, 1, repeat)
                 all_index_record.append(mask1)
+                left_tokens_pre = left_tokens
                 left_tokens = math.ceil(keep_rate * left_tokens)
                 mask2 = torch.rand(1, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
-                mask2 = mask2 * (N - 1)
+                mask2 = mask2 * left_tokens_pre
                 mask2 = mask2.type(torch.int)
                 mask2 = mask2.repeat(1, 1, repeat)
                 all_index_record.append(mask2)
+                left_tokens_pre = left_tokens
                 left_tokens = math.ceil(keep_rate * left_tokens)
                 mask3 = torch.rand(1, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
-                mask3 = mask3 * (N - 1)
+                mask3 = mask3 * left_tokens_pre
                 mask3 = mask3.type(torch.int)
                 mask3 = mask3.repeat(1, 1, repeat)
                 all_index_record.append(mask3)
