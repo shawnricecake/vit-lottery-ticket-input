@@ -13,7 +13,6 @@ nohup \
 python3 -m torch.distributed.launch --nproc_per_node=8 \
         --use_env main.py \
         --model deit_small_patch16_shrink_base \
-        --fuse_token \
         --adjust-keep-rate \
         --lottery ../checkpoints/exp-deit-small-keeprate0.9-load-pretrain-finetune/best_checkpoint.pth \
         --base_keep_rate 0.9 \
