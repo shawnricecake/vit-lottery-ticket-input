@@ -97,6 +97,12 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
             #####################################################
 
             outputs = model(samples, keep_rate=keep_rate if not (args.lottery or args.random) else None)
+
+            #####################################################
+            # return to None for the test part
+            model.all_idx_record = None
+            #####################################################
+
             loss = criterion(samples, outputs, targets)
 
         loss_value = loss.item()
