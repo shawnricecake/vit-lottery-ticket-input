@@ -60,7 +60,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
 
             #####################################################
             if args.lottery and model_pretrained is not None:
-                outputs = model_pretrained(samples, keep_rate)
+                outputs = model_pretrained(samples, keep_rate=keep_rate)
                 all_index_record = []
                 for e in model_pretrained.blocks:
                     all_index_record.append(e.idx_record)

@@ -344,6 +344,11 @@ def main(args):
         model.load_state_dict(checkpoint_model, strict=False)
 
     model.to(device)
+    ###################################
+    if args.lottery:
+        model_pretrained.to(device)
+        model_pretrained.eval()
+    ###################################
 
     output_dir = Path(args.output_dir)
 
