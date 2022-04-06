@@ -190,7 +190,7 @@ def get_args_parser():
     parser.add_argument('--lottery', default='', help='run lottery experiment, and set the pretrained model path')
     parser.add_argument('--adjust-keep-rate', action='store_true', default=False,
                         help='use evit original adjust keep rate function')
-    parser.add_argument('--random', action='store_true', default=False, help='run RR experiment')
+    parser.add_argument('--random', action='store_true', help='run RR experiment')
     #########################################################################################################
 
     # distributed training parameters
