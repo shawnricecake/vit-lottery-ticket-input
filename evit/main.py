@@ -488,7 +488,7 @@ def main(args):
                     'args': args,
                 }, checkpoint_path)
 
-        test_interval = 30
+        test_interval = 1
         if epoch % test_interval == 0 or epoch == args.epochs - 1:
             test_stats = evaluate(data_loader_val, model, device, keep_rate)
             print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.3f}%")
