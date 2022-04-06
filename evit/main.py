@@ -471,7 +471,7 @@ def main(args):
             args.clip_grad, model_ema, mixup_fn, writer,
             set_training_mode=args.finetune == '',  # keep in eval mode during finetuning
             args=args,
-            model_teacher=model_pretrained
+            model_pretrained=model_pretrained
         )
 
         lr_scheduler.step(epoch)
