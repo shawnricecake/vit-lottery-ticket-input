@@ -64,7 +64,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
                 all_index_record = []
                 for e in model_pretrained.blocks:
                     all_index_record.append(e.idx_record)
-                model.all_idx_record = all_index_record
+                model.module.all_idx_record = all_index_record
             elif args.random:
                 if "small" in args.model:
                     N = 197
@@ -93,14 +93,14 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
                 mask3 = mask3.type(torch.int64)
                 mask3 = mask3.repeat(1, 1, repeat)
                 all_index_record.append(mask3)
-                model.all_idx_record = all_index_record
+                model.module.all_idx_record = all_index_record
             #####################################################
 
             outputs = model(samples, keep_rate=keep_rate if not (args.lottery or args.random) else None)
 
             #####################################################
             # return to None for the test part
-            model.all_idx_record = None
+            model.module.all_idx_record = None
             #####################################################
 
             loss = criterion(samples, outputs, targets)
