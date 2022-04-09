@@ -353,6 +353,11 @@ def main(args):
         model_pretrained.eval()
     ###################################
 
+    ###################################
+    if args.qkv_change:
+        args.qkv_change = int(args.qkv_change)
+    ###################################
+
     output_dir = Path(args.output_dir)
 
     if (args.test_speed or args.only_test_speed) and utils.is_main_process():
