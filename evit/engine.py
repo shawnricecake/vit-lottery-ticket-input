@@ -28,7 +28,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
                     writer=None,
                     set_training_mode=True,
                     args=None,
-                    model_pretrained=None):
+                    model_pretrained=None,
+                    all_index_record=None):
     model.train(set_training_mode)
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -93,6 +94,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
                 mask3 = mask3.type(torch.int64)
                 mask3 = mask3.repeat(1, 1, repeat)
                 all_index_record.append(mask3)
+                model.module.all_idx_record = all_index_record
+            elif args.random_fixed:
                 model.module.all_idx_record = all_index_record
             #####################################################
 
