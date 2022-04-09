@@ -100,7 +100,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
             #####################################################
 
             outputs = model(samples, keep_rate=keep_rate if not (args.lottery or args.random) else None,
-                            qk_change=args.qk_change)
+                            qkv_change=args.qkv_change)
 
             #####################################################
             # return to None for the test part
@@ -157,7 +157,7 @@ def evaluate(data_loader, model, device, keep_rate=None, args=None):
 
         # compute output
         with torch.cuda.amp.autocast():
-            output = model(images, keep_rate=keep_rate, qk_change=args.qk_change)
+            output = model(images, keep_rate=keep_rate, qkv_change=args.qkv_change)
             loss = criterion(output, target)
 
         acc1, acc5 = accuracy(output, target, topk=(1, 5))

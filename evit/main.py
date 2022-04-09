@@ -193,7 +193,7 @@ def get_args_parser():
                         help='use evit original adjust keep rate function')
     parser.add_argument('--random', action='store_true', help='run RR experiment')
     parser.add_argument('--random-fixed', action='store_true', help='run RR experiment with fixed random mask')
-    parser.add_argument('--qk-change', action='store_true', help='run RR experiment with q k computation change')
+    parser.add_argument('--qkv-change', default=False, help='run RR experiment with q k v computation change')
     #########################################################################################################
 
     # distributed training parameters

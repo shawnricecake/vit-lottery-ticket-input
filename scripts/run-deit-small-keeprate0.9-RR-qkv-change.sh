@@ -4,7 +4,7 @@ cd ../evit/
 # Keep Rate 0.9
 
 data_path="/home/ImageNet"
-save_path="../checkpoints/exp-deit-small-keeprate0.9-RR-qk-change"
+save_path="../checkpoints/exp-deit-small-keeprate0.9-RR-qkv-change"
 mkdir -p $save_path
 
 
@@ -14,7 +14,8 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --use_env main.py \
         --model deit_small_patch16_shrink_base \
         --lottery ../checkpoints/exp-deit-small-keeprate0.9-load-pretrain-finetune/best_checkpoint.pth \
-        --qk-change \
+        --qkv-change 2 \
+        --seed 1 \
         --base_keep_rate 0.9 \
         --input-size 224 \
         --batch-size 128 \
@@ -25,4 +26,4 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --dist-eval \
         --data-path ${data_path} \
         --output_dir ${save_path} \
-> ../scripts/exp-deit-small-keeprate0.9-RR-qk-change.txt 2>&1 &
+> ../scripts/exp-deit-small-keeprate0.9-RR-qkv-change.txt 2>&1 &
