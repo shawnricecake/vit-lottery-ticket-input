@@ -1,10 +1,10 @@
 cd ../evit/
 
-# Train from scratch as RR using the random mask
+# Train from scratch as LTH using the pretrained EViT model as "teacher"
 # Keep Rate 0.9
 
 data_path="/home/ImageNet"
-save_path="../checkpoints/exp-deit-small-keeprate0.9-RR"
+save_path="../checkpoints/exp-deit-small-keeprate0.9-RR-qk-change"
 mkdir -p $save_path
 
 
@@ -13,7 +13,8 @@ nohup \
 python3 -m torch.distributed.launch --nproc_per_node=8 \
         --use_env main.py \
         --model deit_small_patch16_shrink_base \
-        --random \
+        --lottery ../checkpoints/exp-deit-small-keeprate0.9-load-pretrain-finetune/best_checkpoint.pth \
+        --qk-change \
         --base_keep_rate 0.9 \
         --input-size 224 \
         --batch-size 128 \
@@ -24,4 +25,4 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --dist-eval \
         --data-path ${data_path} \
         --output_dir ${save_path} \
-> ../scripts/exp-deit-small-keeprate0.9-RR.txt 2>&1 &
+> ../scripts/exp-deit-small-keeprate0.9-RR-qk-change.txt 2>&1 &

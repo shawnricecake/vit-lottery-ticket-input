@@ -99,7 +99,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
                 model.module.all_idx_record = all_index_record
             #####################################################
 
-            outputs = model(samples, keep_rate=keep_rate if not (args.lottery or args.random) else None)
+            outputs = model(samples, keep_rate=keep_rate if not (args.lottery or args.random) else None,
+                            qk_change=args.qk_change)
 
             #####################################################
             # return to None for the test part
@@ -141,7 +142,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
 
 
 @torch.no_grad()
-def evaluate(data_loader, model, device, keep_rate=None):
+def evaluate(data_loader, model, device, keep_rate=None, args=None):
     criterion = torch.nn.CrossEntropyLoss()
 
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -156,7 +157,7 @@ def evaluate(data_loader, model, device, keep_rate=None):
 
         # compute output
         with torch.cuda.amp.autocast():
-            output = model(images, keep_rate)
+            output = model(images, keep_rate=keep_rate, qk_change=args.qk_change)
             loss = criterion(output, target)
 
         acc1, acc5 = accuracy(output, target, topk=(1, 5))

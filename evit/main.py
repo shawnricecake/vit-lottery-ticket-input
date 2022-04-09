@@ -193,6 +193,7 @@ def get_args_parser():
                         help='use evit original adjust keep rate function')
     parser.add_argument('--random', action='store_true', help='run RR experiment')
     parser.add_argument('--random-fixed', action='store_true', help='run RR experiment with fixed random mask')
+    parser.add_argument('--qk-change', action='store_true', help='run RR experiment with q k computation change')
     #########################################################################################################
 
     # distributed training parameters
@@ -462,7 +463,7 @@ def main(args):
                 loss_scaler.load_state_dict(checkpoint['scaler'])
 
     if args.eval:
-        test_stats = evaluate(data_loader_val, model, device)
+        test_stats = evaluate(data_loader_val, model, device, args=args)
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
         return
 
@@ -531,7 +532,7 @@ def main(args):
 
         test_interval = 1
         if epoch % test_interval == 0 or epoch == args.epochs - 1:
-            test_stats = evaluate(data_loader_val, model, device, keep_rate)
+            test_stats = evaluate(data_loader_val, model, device, keep_rate, args=args)
             print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.3f}%")
 
             ###################################################################

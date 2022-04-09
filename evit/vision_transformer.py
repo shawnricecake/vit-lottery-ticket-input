@@ -281,14 +281,18 @@ class Attention(nn.Module):
         self.keep_rate = keep_rate
         assert 0 < keep_rate <= 1, "keep_rate must > 0 and <= 1, got {0}".format(keep_rate)
 
-    def forward(self, x, keep_rate=None, tokens=None):
+    def forward(self, x, keep_rate=None, tokens=None, qk_change=False):
         if keep_rate is None:
             keep_rate = self.keep_rate
         B, N, C = x.shape
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]   # make torchscript happy (cannot use tensor as tuple)
 
-        attn = (q @ k.transpose(-2, -1)) * self.scale
+        if not qk_change:
+            attn = (q @ k.transpose(-2, -1)) * self.scale
+        else:
+            attn = (k @ q.transpose(-2, -1)) * self.scale
+
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
 
@@ -338,12 +342,12 @@ class Block(nn.Module):
         self.idx_record = None
         #####################################################
 
-    def forward(self, x, keep_rate=None, tokens=None):
+    def forward(self, x, keep_rate=None, tokens=None, qk_change=False):
         if keep_rate is None:
             keep_rate = self.keep_rate  # this is for inference, use the default keep rate
         B, N, C = x.shape
 
-        tmp, index, idx, cls_attn, left_tokens = self.attn(self.norm1(x), keep_rate, tokens)
+        tmp, index, idx, cls_attn, left_tokens = self.attn(self.norm1(x), keep_rate, tokens, qk_change=qk_change)
         x = x + self.drop_path(tmp)
 
         if index is not None:
@@ -503,7 +507,7 @@ class VisionTransformer(nn.Module):
     def name(self):
         return "vit_simple_topk"
 
-    def forward_features(self, x, keep_rate=None, tokens=None):
+    def forward_features(self, x, keep_rate=None, tokens=None, qk_change=False):
         _, _, h, w = x.shape
         if not isinstance(keep_rate, (tuple, list)):
             keep_rate = (keep_rate, ) * self.depth
@@ -546,7 +550,7 @@ class VisionTransformer(nn.Module):
 
         left_tokens = []
         for i, blk in enumerate(self.blocks):
-            x, left_token = blk(x, keep_rate[i], tokens[i])
+            x, left_token = blk(x, keep_rate[i], tokens[i], qk_change=qk_change)
             left_tokens.append(left_token)
         x = self.norm(x)
         if self.dist_token is None:
@@ -554,8 +558,8 @@ class VisionTransformer(nn.Module):
         else:
             return x[:, 0], x[:, 1]
 
-    def forward(self, x, keep_rate=None, tokens=None, speed_test=False):
-        x, left_tokens = self.forward_features(x, keep_rate, tokens)
+    def forward(self, x, keep_rate=None, tokens=None, speed_test=False, qk_change=False):
+        x, left_tokens = self.forward_features(x, keep_rate, tokens, qk_change=qk_change)
         if self.head_dist is not None:
             x, x_dist = self.head(x[0]), self.head_dist(x[1])  # x must be a tuple
             if self.training and not torch.jit.is_scripting():
