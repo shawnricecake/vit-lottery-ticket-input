@@ -66,7 +66,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
                 for e in model_pretrained.blocks:
                     all_index_record.append(e.idx_record)
                 model.module.all_idx_record = all_index_record
-            elif args.random:
+            elif args.random and keep_rate < 1:
                 if "small" in args.model:
                     N = 197
                     repeat = 384
