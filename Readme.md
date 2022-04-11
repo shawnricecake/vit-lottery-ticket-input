@@ -32,5 +32,6 @@ You can revise the keep rate as you want:
 3. revise the --lottery at "-keeprate0.xx-"
 4. revise the --base_keep_rate 0.xx
 5. revise the output txt file name at the last row: "-keeprate0.xx-"
+(6.) revise the epoch when training the "RR": --epochs xxx
 ```
 
