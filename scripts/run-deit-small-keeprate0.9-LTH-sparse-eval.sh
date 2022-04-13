@@ -17,6 +17,7 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --base_keep_rate 0.9 \
         --eval \
         --sparse-eval \
+        --resume ../checkpoints/exp-deit-small-keeprate0.9-LTH/best_checkpoint.pth \
         --input-size 224 \
         --batch-size 128 \
         --warmup-epochs 5 \
