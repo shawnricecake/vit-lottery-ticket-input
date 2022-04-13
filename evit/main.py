@@ -23,7 +23,7 @@ from timm.optim import create_optimizer
 from timm.utils import NativeScaler, get_state_dict, ModelEma
 
 from datasets import build_dataset
-from engine import train_one_epoch, evaluate
+from engine import train_one_epoch, evaluate, evaluate_sparse
 from losses import DistillationLoss
 from samplers import RASampler
 import models
@@ -194,6 +194,7 @@ def get_args_parser():
     parser.add_argument('--random', action='store_true', help='run RR experiment')
     parser.add_argument('--random-fixed', action='store_true', help='run RR experiment with fixed random mask')
     parser.add_argument('--qkv-change', default=False, help='run RR experiment with q k v computation change')
+    parser.add_argument('--sparse-eval', action='store_true', help='evaluation with sparse mask')
     #########################################################################################################
 
     # distributed training parameters
@@ -468,8 +469,13 @@ def main(args):
                 loss_scaler.load_state_dict(checkpoint['scaler'])
 
     if args.eval:
+        if args.sparse_eval:
+            test_stats = evaluate_sparse(data_loader_val, model, device, args=args,
+                                         model_pretrained=model_pretrained)
+            print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.3f}%")
+            return
         test_stats = evaluate(data_loader_val, model, device, args=args)
-        print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
+        print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.3f}%")
         return
 
     #########################################################################################################
