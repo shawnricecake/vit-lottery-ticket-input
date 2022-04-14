@@ -4,7 +4,7 @@ cd ../evit/
 # Keep Rate 0.85
 
 data_path="/home/ImageNet"
-save_path="../checkpoints/exp-deit-small-keeprate0.85-RR-adjusted"
+save_path="../checkpoints/exp-deit-small-keeprate0.85-RR"
 mkdir -p $save_path
 
 
@@ -24,4 +24,4 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --dist-eval \
         --data-path ${data_path} \
         --output_dir ${save_path} \
-> ../scripts/exp-deit-small-keeprate0.85-RR-adjusted.txt 2>&1 &
+> ../scripts/exp-deit-small-keeprate0.85-RR.txt 2>&1 &
