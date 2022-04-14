@@ -1042,6 +1042,17 @@ def deit_small_patch16_shrink_base(pretrained=False, base_keep_rate=0.7, drop_lo
 
 
 @register_model
+def deit_tiny_patch16_shrink_base(pretrained=False, base_keep_rate=0.7, drop_loc=(3, 6, 9), **kwargs):
+    keep_rate = [1] * 12
+    for loc in drop_loc:
+        keep_rate[loc] = base_keep_rate
+    model_kwargs = dict(patch_size=16, embed_dim=192, depth=12, num_heads=3, keep_rate=keep_rate)
+    model_kwargs.update(kwargs)
+    model = _create_vision_transformer('deit_tiny_patch16_224', pretrained=pretrained, **model_kwargs)
+    return model
+
+
+@register_model
 def deit_base_patch16_shrink_base(pretrained=False, base_keep_rate=0.7, drop_loc=(3, 6, 9), **kwargs):
     keep_rate = [1] * 12
     for loc in drop_loc:
