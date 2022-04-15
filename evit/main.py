@@ -471,6 +471,7 @@ def main(args):
     if args.eval:
         if args.sparse_eval:
             test_stats = evaluate_sparse(data_loader_val, model, device, args=args,
+                                         keep_rate=args.base_keep_rate,
                                          model_pretrained=model_pretrained)
             print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.3f}%")
             return
