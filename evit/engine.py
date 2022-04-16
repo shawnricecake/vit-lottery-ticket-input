@@ -70,6 +70,12 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
                 if "small" in args.model:
                     N = 197
                     repeat = 384
+                elif "tiny" in args.model:
+                    N = 197
+                    repeat = 192
+                elif "base" in args.model:
+                    N = 197
+                    repeat = 768
                 else:
                     assert "Error: have not support this kind model: {}".format(args.model)
                 batch_size_here = samples.shape[0]
@@ -204,6 +210,12 @@ def evaluate_sparse(data_loader, model, device, keep_rate=None, args=None,
                 if "small" in args.model:
                     N = 197
                     repeat = 384
+                elif "tiny" in args.model:
+                    N = 197
+                    repeat = 192
+                elif "base" in args.model:
+                    N = 197
+                    repeat = 768
                 else:
                     assert "Error: have not support this kind model: {}".format(args.model)
                 batch_size_here = images.shape[0]
