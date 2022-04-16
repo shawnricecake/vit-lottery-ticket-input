@@ -5,8 +5,9 @@ cd ../evit/
 
 data_path=${1:-"/mnt/dataset/imagenet"}
 save_path="../checkpoints/exp-deit-tiny-keeprate0.8-LTH"
+log_path="../logs"
 mkdir -p $save_path
-mkdir logs
+mkdir -p $log_path
 
 
 CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" \
