@@ -4,7 +4,7 @@ cd ../evit/
 # Keep Rate 0.9
 
 data_path=${1:-"/mnt/dataset/imagenet"}
-save_path="../checkpoints/exp-deit-base-keeprate0.9-LTH"
+save_path="../checkpoints/exp-deit-base-keeprate0.9-LTH-tiny-teacher"
 log_path="../logs"
 mkdir -p $save_path
 mkdir -p $log_path
@@ -27,4 +27,4 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --dist-eval \
         --data-path ${data_path} \
         --output_dir ${save_path} \
-2>&1 | tee ../logs/exp-deit-base-keeprate0.9-LTH.txt 2>&1 &
+2>&1 | tee ../logs/exp-deit-base-keeprate0.9-LTH-tiny-teacher.txt 2>&1 &
