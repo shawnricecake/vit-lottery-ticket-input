@@ -189,6 +189,7 @@ def get_args_parser():
 
     #########################################################################################################
     parser.add_argument('--lottery', default='', help='run lottery experiment, and set the pretrained model path')
+    parser.add_argument('--lottery-model-type', default='', help='teacher model type')
     parser.add_argument('--adjust-keep-rate', action='store_true', default=False,
                         help='use evit original adjust keep rate function')
     parser.add_argument('--random', action='store_true', help='run RR experiment')
@@ -292,7 +293,7 @@ def main(args):
     model_pretrained = None
     if args.lottery:
         model_pretrained = create_model(
-            args.model,
+            args.model if not args.lottery_model_type else args.lottery_model_type,
             base_keep_rate=args.base_keep_rate,
             drop_loc=eval(args.drop_loc),
             pretrained=False,
@@ -303,7 +304,10 @@ def main(args):
             fuse_token=args.fuse_token,
             img_size=(args.input_size, args.input_size)
         )
-        checkpoint = torch.load(args.lottery, map_location='cpu')
+        if args.lottery.startswith('https'):
+            checkpoint = torch.hub.load_state_dict_from_url(args.lottery, map_location='cpu', check_hash=True)
+        else:
+            checkpoint = torch.load(args.lottery, map_location='cpu')
         checkpoint = checkpoint['model']
         missing_keys, unexpected_keys = model_pretrained.load_state_dict(checkpoint, strict=False)
         print('# missing keys=', missing_keys)
