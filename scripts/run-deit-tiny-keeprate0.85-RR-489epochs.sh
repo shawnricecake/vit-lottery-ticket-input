@@ -26,4 +26,4 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --dist-eval \
         --data-path ${data_path} \
         --output_dir ${save_path} \
-2>&1 | tee ../logs/exp-deit-tiny-keeprate0.85-RR-489epochs.txt 2>&1 &
+2>&1 | tee ../logs/exp-deit-tiny-keeprate0.85-RR-489epochs.txt

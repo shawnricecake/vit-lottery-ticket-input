@@ -24,4 +24,4 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --dist-eval \
         --data-path ${data_path} \
         --output_dir ${save_path} \
-> ../scripts/exp-deit-tiny-keeprate0.9-LTH.txt 2>&1 &
+> ../scripts/exp-deit-tiny-keeprate0.9-LTH.txt

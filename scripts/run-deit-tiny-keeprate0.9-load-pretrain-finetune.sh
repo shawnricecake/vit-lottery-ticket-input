@@ -28,4 +28,4 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --finetune https://dl.fbaipublicfiles.com/deit/deit_tiny_patch16_224-a1311bcf.pth \
         --data-path ${data_path} \
         --output_dir ${save_path} \
-> ../scripts/exp-deit-tiny-keeprate0.9-load-pretrain-finetune.txt 2>&1 &
+> ../scripts/exp-deit-tiny-keeprate0.9-load-pretrain-finetune.txt
