@@ -550,6 +550,15 @@ class VisionTransformer(nn.Module):
             non_cls = x[:, 1:]
             for e in self.all_idx_record:
                 if e is not None:
+                    # when teacher is another kind of model
+                    # as the dim of deit tiny, small, base is: 768, 384, 192
+                    # so we can do the following manipulation.
+                    if e.shape[2] < non_cls.shape[2]:
+                        t = int(non_cls.shape[2] / e.shape[2])
+                        e = e.repeat(1, 1, t)
+                    elif e.shape[2] > non_cls.shape[2]:
+                        t = int(e.shape[2] / non_cls.shape[2])
+                        e = e.repeat(1, 1, t)
                     non_cls = torch.gather(non_cls, dim=1, index=e)  # [B, left_tokens, C]
             x = torch.cat([x[:, 0:1], non_cls], dim=1)
         #####################################################
