@@ -28,12 +28,13 @@ from logger import create_logger
 from utils import load_checkpoint, load_pretrained, \
     save_checkpoint, get_grad_norm, auto_resume_helper, reduce_tensor, \
     save_best_checkpoint, save_last_checkpoint, \
-    go_back_original_input_with_zero
+    go_back_original_input_with_zero, go_back_original_input_and_generate_small_dense
 
 ######################
 from timm.models import create_model
 from evit.vision_transformer import deit_small_patch16_shrink_base, \
     deit_tiny_patch16_shrink_base, deit_base_patch16_shrink_base
+
 ######################
 
 try:
@@ -84,6 +85,7 @@ def parse_option():
     parser.add_argument('--lottery-model-type', default='', help='teacher model type')
     parser.add_argument('--random', action='store_true', help='run RR experiment')
     parser.add_argument('--small-dense-input', action='store_true', help='small dense input')
+    parser.add_argument('--small-dense-input-size', default=192, type=int)
     #########################################################################################################
 
     # distributed training
@@ -100,7 +102,7 @@ def main(args, config):
     dataset_train, dataset_val, data_loader_train, data_loader_val, mixup_fn = build_loader(config)
 
     logger.info(f"Creating model:{config.MODEL.TYPE}/{config.MODEL.NAME}")
-    model = build_model(config)
+    model = build_model(config, args)
     model.cuda()
     logger.info(str(model))
 
@@ -195,7 +197,7 @@ def main(args, config):
 
         train_one_epoch(config, model, criterion, data_loader_train, optimizer, epoch, mixup_fn, lr_scheduler,
                         args, model_pretrained)
-        if dist.get_rank() == 0: #and (epoch % config.SAVE_FREQ == 0 or epoch == (config.TRAIN.EPOCHS - 1)):
+        if dist.get_rank() == 0:  # and (epoch % config.SAVE_FREQ == 0 or epoch == (config.TRAIN.EPOCHS - 1)):
             # save_checkpoint(config, epoch, model_without_ddp, max_accuracy, optimizer, lr_scheduler, logger)
             save_last_checkpoint(config, epoch, model_without_ddp, max_accuracy, optimizer, lr_scheduler, logger)
             save_best_checkpoint(config, epoch, model_without_ddp, max_accuracy, optimizer, lr_scheduler, logger)
@@ -245,8 +247,10 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
                 repeat = 768
             else:
                 exit("we did not support this kind of teacher model now")
-            N_here = 196  # for deit tiny, small and base, the token number is 196
-            patch_num = 14
+            # for deit tiny, small and base, these parameters are same
+            N_here = 196
+            image_size = 224
+            patch_num_one_side = 14
             patch_size = 16
             total_original_index = torch.arange(0, N_here)
             total_original_index = total_original_index.view(1, N_here)
@@ -257,15 +261,29 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
                     e = e.detach().cpu()
                     total_original_index = torch.gather(total_original_index, dim=1, index=e)
             total_original_index = total_original_index[:, :, 0]  # [B, left_tokens]
-            #--------------------------
+            # --------------------------
             if args.small_dense_input:
-                # TODO: add small dense input here
-                print()
+                assert total_original_index.shape[1] == args.small_dense_input_size * args.small_dense_input_size, \
+                    "the output number of tokens is {}, but your input small dense input size is {}, " \
+                    "it is incorrect because {}^2 != {}".format(total_original_index.shape[1],
+                                                                args.small_dense_input_size,
+                                                                args.small_dense_input_size,
+                                                                total_original_index.shape[1])
+                samples = \
+                    go_back_original_input_and_generate_small_dense(index=total_original_index,
+                                                                    left_tokens=total_original_index.shape[1],
+                                                                    left_patch_num_one_side=args.small_dense_input_size,
+                                                                    batch_size=batch_size_here,
+                                                                    image_size=image_size,
+                                                                    patch_size=patch_size,
+                                                                    patch_num_one_side=patch_num_one_side,
+                                                                    images=samples)
             else:
-                samples = go_back_original_input_with_zero(index_input=total_original_index,
+                samples = go_back_original_input_with_zero(index=total_original_index,
                                                            batch_size=batch_size_here,
-                                                           patch_num=patch_num,
+                                                           image_size=image_size,
                                                            patch_size=patch_size,
+                                                           patch_num_one_side=patch_num_one_side,
                                                            images=samples)
             # --------------------------
         #########################################################################################################

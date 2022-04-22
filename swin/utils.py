@@ -214,32 +214,33 @@ def reduce_tensor(tensor):
     return rt
 
 
-def go_back_original_input_with_zero(index_input, batch_size, patch_num, patch_size, images):
-    index_input = index_input.unsqueeze(-1).expand(-1, -1, patch_size * patch_size)
-    index_input = index_input.unsqueeze(-1).expand(-1, -1, -1, 2)
-    location_total = torch.zeros(patch_size * patch_size, batch_size, index_input.shape[1], 2)
-    for i in range(patch_size * patch_size):
-        t = index_input[:, :, i, 0]
+def go_back_original_input_with_zero(index, batch_size, image_size, patch_size, patch_num_one_side, images):
+    images = images.reshape(batch_size, 3, patch_num_one_side, patch_size, patch_num_one_side, patch_size)
+    images = images.permute(0, 1, 2, 4, 3, 5)
+    images = images.reshape(batch_size, 3, patch_num_one_side * patch_num_one_side, patch_size, patch_size)
 
-        # y-axis location
-        y = (t % patch_num) * patch_size + (i % patch_size)
-        # x-axis location
-        x = (t // patch_num) * patch_size + (i // patch_size)
-
-        x = x.unsqueeze(-1).expand(-1, -1, 1)
-        y = y.unsqueeze(-1).expand(-1, -1, 1)
-
-        location = torch.cat([x, y], dim=-1)
-
-        location_total[i, :, :, :] = location
-
-    location_total = location_total.permute(1, 2, 0, 3)
-    location_total = location_total.reshape(batch_size, -1, 2)
-    location_total = location_total.type(torch.int64)
-
-    mask = torch.zeros(images.shape).to(images.device)
     for i in range(batch_size):
-        mask[i, :, location_total[i, :, 0], location_total[i, :, 1]] = 1
+        images[i, :, index[i, :], :, :] = 0
 
-    images = images * mask
+    images = images.reshape(batch_size, 3, patch_num_one_side, patch_num_one_side, patch_size, patch_size)
+    images = images.permute(0, 1, 2, 4, 3, 5)
+    images = images.reshape(batch_size, 3, image_size, image_size)
+
     return images
+
+
+def go_back_original_input_and_generate_small_dense(index, left_tokens, left_patch_num_one_side,
+                                                    batch_size, image_size, patch_size, patch_num_one_side, images):
+    images = images.reshape(batch_size, 3, patch_num_one_side, patch_size, patch_num_one_side, patch_size)
+    images = images.permute(0, 1, 2, 4, 3, 5)
+    images = images.reshape(batch_size, 3, patch_num_one_side * patch_num_one_side, patch_size, patch_size)
+
+    res = torch.zeros(batch_size, 3, left_tokens, patch_size, patch_size).to(images.device)
+    for i in range(batch_size):
+        res[i, :, :, :, :] = images[i, :, index[i, :], :, :]
+
+    res = res.reshape(batch_size, 3, left_patch_num_one_side, left_patch_num_one_side, patch_size, patch_size)
+    res = res.permute(0, 1, 2, 4, 3, 5)
+    res = res.reshape(batch_size, 3, left_patch_num_one_side * patch_size, left_patch_num_one_side * patch_size)
+
+    return res
