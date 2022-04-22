@@ -570,7 +570,7 @@ class VisionTransformer(nn.Module):
 
         #####################################################
         if self.all_idx_record is not None:
-            assert self.all_idx_record == [], "Error: got wrong pruning info"
+            assert self.all_idx_record != [], "Error: got wrong pruning info"
             non_cls = x[:, 1:]
             for e in self.all_idx_record:
                 if e is not None:
