@@ -25,7 +25,16 @@ from data import build_loader
 from lr_scheduler import build_scheduler
 from optimizer import build_optimizer
 from logger import create_logger
-from utils import load_checkpoint, load_pretrained, save_checkpoint, get_grad_norm, auto_resume_helper, reduce_tensor
+from utils import load_checkpoint, load_pretrained, \
+    save_checkpoint, get_grad_norm, auto_resume_helper, reduce_tensor, \
+    save_best_checkpoint, save_last_checkpoint, \
+    go_back_original_input_with_zero
+
+######################
+from timm.models import create_model
+from evit.vision_transformer import deit_small_patch16_shrink_base, \
+    deit_tiny_patch16_shrink_base, deit_base_patch16_shrink_base
+######################
 
 try:
     # noinspection PyUnresolvedReferences
@@ -66,6 +75,17 @@ def parse_option():
     parser.add_argument('--eval', action='store_true', help='Perform evaluation only')
     parser.add_argument('--throughput', action='store_true', help='Test throughput only')
 
+    #########################################################################################################
+    parser.add_argument('--drop_loc', default='(3, 6, 9)', type=str,
+                        help='the layer indices for shrinking inattentive tokens')
+    parser.add_argument('--base_keep_rate', type=float, default=0.7,
+                        help='Base keep rate (default: 0.7)')
+    parser.add_argument('--lottery', default='', help='run lottery experiment, and set the pretrained model path')
+    parser.add_argument('--lottery-model-type', default='', help='teacher model type')
+    parser.add_argument('--random', action='store_true', help='run RR experiment')
+    parser.add_argument('--small-dense-input', action='store_true', help='small dense input')
+    #########################################################################################################
+
     # distributed training
     parser.add_argument("--local_rank", type=int, required=True, help='local rank for DistributedDataParallel')
 
@@ -76,13 +96,45 @@ def parse_option():
     return args, config
 
 
-def main(config):
+def main(args, config):
     dataset_train, dataset_val, data_loader_train, data_loader_val, mixup_fn = build_loader(config)
 
     logger.info(f"Creating model:{config.MODEL.TYPE}/{config.MODEL.NAME}")
     model = build_model(config)
     model.cuda()
     logger.info(str(model))
+
+    #########################################################################################################
+    model_pretrained = None
+    if args.lottery:
+        model_pretrained = create_model(
+            args.lottery_model_type,
+            base_keep_rate=args.base_keep_rate,
+            drop_loc=eval(args.drop_loc),
+            pretrained=False,
+            num_classes=config.MODEL.NUM_CLASSES,
+            drop_rate=config.MODEL.DROP_RATE,
+            drop_path_rate=config.MODEL.DROP_PATH_RATE,
+            drop_block_rate=None,
+            fuse_token=False,
+            img_size=(config.DATA.IMG_SIZE, config.DATA.IMG_SIZE)
+        )
+        if args.lottery.startswith('https'):
+            checkpoint = torch.hub.load_state_dict_from_url(args.lottery, map_location='cpu', check_hash=True)
+        else:
+            checkpoint = torch.load(args.lottery, map_location='cpu')
+        checkpoint = checkpoint['model']
+        missing_keys, unexpected_keys = model_pretrained.load_state_dict(checkpoint, strict=False)
+        print('# missing keys=', missing_keys)
+        print('# unexpected keys=', unexpected_keys)
+        print('successfully loaded from given checkpoint weights:', args.lottery)
+    #########################################################################################################
+
+    ##################################################
+    if args.lottery and model_pretrained is not None:
+        model_pretrained.cuda()
+        model_pretrained.eval()
+    ##################################################
 
     optimizer = build_optimizer(config, model)
     if config.AMP_OPT_LEVEL != "O0":
@@ -141,12 +193,15 @@ def main(config):
     for epoch in range(config.TRAIN.START_EPOCH, config.TRAIN.EPOCHS):
         data_loader_train.sampler.set_epoch(epoch)
 
-        train_one_epoch(config, model, criterion, data_loader_train, optimizer, epoch, mixup_fn, lr_scheduler)
-        if dist.get_rank() == 0 and (epoch % config.SAVE_FREQ == 0 or epoch == (config.TRAIN.EPOCHS - 1)):
-            save_checkpoint(config, epoch, model_without_ddp, max_accuracy, optimizer, lr_scheduler, logger)
+        train_one_epoch(config, model, criterion, data_loader_train, optimizer, epoch, mixup_fn, lr_scheduler,
+                        args, model_pretrained)
+        if dist.get_rank() == 0: #and (epoch % config.SAVE_FREQ == 0 or epoch == (config.TRAIN.EPOCHS - 1)):
+            # save_checkpoint(config, epoch, model_without_ddp, max_accuracy, optimizer, lr_scheduler, logger)
+            save_last_checkpoint(config, epoch, model_without_ddp, max_accuracy, optimizer, lr_scheduler, logger)
+            save_best_checkpoint(config, epoch, model_without_ddp, max_accuracy, optimizer, lr_scheduler, logger)
 
         acc1, acc5, loss = validate(config, data_loader_val, model)
-        logger.info(f"Accuracy of the network on the {len(dataset_val)} test images: {acc1:.1f}%")
+        logger.info(f"Accuracy of the network on the {len(dataset_val)} test images: {acc1:.3f}%")
         max_accuracy = max(max_accuracy, acc1)
         logger.info(f'Max accuracy: {max_accuracy:.2f}%')
 
@@ -155,7 +210,8 @@ def main(config):
     logger.info('Training time {}'.format(total_time_str))
 
 
-def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mixup_fn, lr_scheduler):
+def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mixup_fn, lr_scheduler,
+                    args, model_pretrained):
     model.train()
     optimizer.zero_grad()
 
@@ -172,6 +228,47 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
 
         if mixup_fn is not None:
             samples, targets = mixup_fn(samples, targets)
+
+        #########################################################################################################
+        batch_size_here = samples.shape[0]
+        if args.lottery and model_pretrained is not None:
+            outputs = model_pretrained(samples, keep_rate=args.base_keep_rate)
+            all_index_record = []
+            for e in model_pretrained.blocks:
+                all_index_record.append(e.idx_record)
+            # get the original index on input image
+            if "small" in args.lottery_model_type:
+                repeat = 384
+            elif "tiny" in args.lottery_model_type:
+                repeat = 192
+            elif "base" in args.lottery_model_type:
+                repeat = 768
+            else:
+                exit("we did not support this kind of teacher model now")
+            N_here = 196  # for deit tiny, small and base, the token number is 196
+            patch_num = 14
+            patch_size = 16
+            total_original_index = torch.arange(0, N_here)
+            total_original_index = total_original_index.view(1, N_here)
+            total_original_index = total_original_index.repeat(batch_size_here, 1)
+            total_original_index = total_original_index.unsqueeze(-1).expand(-1, -1, repeat)
+            for e in all_index_record:
+                if e is not None:
+                    e = e.detach().cpu()
+                    total_original_index = torch.gather(total_original_index, dim=1, index=e)
+            total_original_index = total_original_index[:, :, 0]  # [B, left_tokens]
+            #--------------------------
+            if args.small_dense_input:
+                # TODO: add small dense input here
+                print()
+            else:
+                samples = go_back_original_input_with_zero(index_input=total_original_index,
+                                                           batch_size=batch_size_here,
+                                                           patch_num=patch_num,
+                                                           patch_size=patch_size,
+                                                           images=samples)
+            # --------------------------
+        #########################################################################################################
 
         outputs = model(samples)
 
@@ -304,7 +401,7 @@ def throughput(data_loader, model, logger):
 
 
 if __name__ == '__main__':
-    _, config = parse_option()
+    args, config = parse_option()
 
     if config.AMP_OPT_LEVEL != "O0":
         assert amp is not None, "amp not installed!"
@@ -354,4 +451,4 @@ if __name__ == '__main__':
     # print config
     logger.info(config.dump())
 
-    main(config)
+    main(args, config)

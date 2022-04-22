@@ -149,6 +149,38 @@ def save_checkpoint(config, epoch, model, max_accuracy, optimizer, lr_scheduler,
     logger.info(f"{save_path} saved !!!")
 
 
+def save_last_checkpoint(config, epoch, model, max_accuracy, optimizer, lr_scheduler, logger):
+    save_state = {'model': model.state_dict(),
+                  'optimizer': optimizer.state_dict(),
+                  'lr_scheduler': lr_scheduler.state_dict(),
+                  'max_accuracy': max_accuracy,
+                  'epoch': epoch,
+                  'config': config}
+    if config.AMP_OPT_LEVEL != "O0":
+        save_state['amp'] = amp.state_dict()
+
+    save_path = os.path.join(config.OUTPUT, f'checkpoint.pth')
+    logger.info(f"{save_path} saving......")
+    torch.save(save_state, save_path)
+    logger.info(f"{save_path} saved !!!")
+
+
+def save_best_checkpoint(config, epoch, model, max_accuracy, optimizer, lr_scheduler, logger):
+    save_state = {'model': model.state_dict(),
+                  'optimizer': optimizer.state_dict(),
+                  'lr_scheduler': lr_scheduler.state_dict(),
+                  'max_accuracy': max_accuracy,
+                  'epoch': epoch,
+                  'config': config}
+    if config.AMP_OPT_LEVEL != "O0":
+        save_state['amp'] = amp.state_dict()
+
+    save_path = os.path.join(config.OUTPUT, f'best_checkpoint.pth')
+    logger.info(f"{save_path} saving......")
+    torch.save(save_state, save_path)
+    logger.info(f"{save_path} saved !!!")
+
+
 def get_grad_norm(parameters, norm_type=2):
     if isinstance(parameters, torch.Tensor):
         parameters = [parameters]
@@ -180,3 +212,34 @@ def reduce_tensor(tensor):
     dist.all_reduce(rt, op=dist.ReduceOp.SUM)
     rt /= dist.get_world_size()
     return rt
+
+
+def go_back_original_input_with_zero(index_input, batch_size, patch_num, patch_size, images):
+    index_input = index_input.unsqueeze(-1).expand(-1, -1, patch_size * patch_size)
+    index_input = index_input.unsqueeze(-1).expand(-1, -1, -1, 2)
+    location_total = torch.zeros(patch_size * patch_size, batch_size, index_input.shape[1], 2)
+    for i in range(patch_size * patch_size):
+        t = index_input[:, :, i, 0]
+
+        # y-axis location
+        y = (t % patch_num) * patch_size + (i % patch_size)
+        # x-axis location
+        x = (t // patch_num) * patch_size + (i // patch_size)
+
+        x = x.unsqueeze(-1).expand(-1, -1, 1)
+        y = y.unsqueeze(-1).expand(-1, -1, 1)
+
+        location = torch.cat([x, y], dim=-1)
+
+        location_total[i, :, :, :] = location
+
+    location_total = location_total.permute(1, 2, 0, 3)
+    location_total = location_total.reshape(batch_size, -1, 2)
+    location_total = location_total.type(torch.int64)
+
+    mask = torch.zeros(images.shape).to(images.device)
+    for i in range(batch_size):
+        mask[i, :, location_total[i, :, 0], location_total[i, :, 1]] = 1
+
+    images = images * mask
+    return images
