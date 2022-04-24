@@ -11,7 +11,7 @@ from .swin_mlp import SwinMLP
 
 def build_model(config, args):
     model_type = config.MODEL.TYPE
-    if model_type == 'swin':
+    if model_type == 'swin' and not args.small_dense_input:
         model = SwinTransformer(img_size=config.DATA.IMG_SIZE,
                                 patch_size=config.MODEL.SWIN.PATCH_SIZE,
                                 in_chans=config.MODEL.SWIN.IN_CHANS,
@@ -43,7 +43,7 @@ def build_model(config, args):
                         ape=config.MODEL.SWIN_MLP.APE,
                         patch_norm=config.MODEL.SWIN_MLP.PATCH_NORM,
                         use_checkpoint=config.TRAIN.USE_CHECKPOINT)
-    elif args.small_dense_input:
+    elif model_type == 'swin' and args.small_dense_input:
         model = SwinTransformer(img_size=args.small_dense_input_size,
                                 patch_size=config.MODEL.SWIN.PATCH_SIZE,
                                 in_chans=config.MODEL.SWIN.IN_CHANS,

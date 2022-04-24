@@ -32,6 +32,9 @@ from utils import load_checkpoint, load_pretrained, \
 
 ######################
 from timm.models import create_model
+import sys
+
+sys.path.append("../")
 from evit.vision_transformer import deit_small_patch16_shrink_base, \
     deit_tiny_patch16_shrink_base, deit_base_patch16_shrink_base
 
@@ -85,7 +88,9 @@ def parse_option():
     parser.add_argument('--lottery-model-type', default='', help='teacher model type')
     parser.add_argument('--random', action='store_true', help='run RR experiment')
     parser.add_argument('--small-dense-input', action='store_true', help='small dense input')
-    parser.add_argument('--small-dense-input-size', default=192, type=int)
+    parser.add_argument('--small-dense-patch-num-one-side', default=13, type=int)
+    parser.add_argument('--small-dense-input-size', default=192, type=int,
+                        help='small-dense-patch-num-one-side * patch size')
     #########################################################################################################
 
     # distributed training
@@ -104,7 +109,7 @@ def main(args, config):
     logger.info(f"Creating model:{config.MODEL.TYPE}/{config.MODEL.NAME}")
     model = build_model(config, args)
     model.cuda()
-    logger.info(str(model))
+    # logger.info(str(model))
 
     #########################################################################################################
     model_pretrained = None
@@ -263,16 +268,18 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
             total_original_index = total_original_index[:, :, 0]  # [B, left_tokens]
             # --------------------------
             if args.small_dense_input:
-                assert total_original_index.shape[1] == args.small_dense_input_size * args.small_dense_input_size, \
-                    "the output number of tokens is {}, but your input small dense input size is {}, " \
-                    "it is incorrect because {}^2 != {}".format(total_original_index.shape[1],
-                                                                args.small_dense_input_size,
-                                                                args.small_dense_input_size,
-                                                                total_original_index.shape[1])
+                assert total_original_index.shape[1] == \
+                       args.small_dense_patch_num_one_side * args.small_dense_patch_num_one_side, \
+                       "the output number of tokens is {}, but your input small dense input size is {}, " \
+                       "it is incorrect because {}^2 != {}".format(total_original_index.shape[1],
+                                                                   args.small_dense_patch_num_one_side,
+                                                                   args.small_dense_patch_num_one_side,
+                                                                   total_original_index.shape[1])
                 samples = \
                     go_back_original_input_and_generate_small_dense(index=total_original_index,
                                                                     left_tokens=total_original_index.shape[1],
-                                                                    left_patch_num_one_side=args.small_dense_input_size,
+                                                                    left_patch_num_one_side=
+                                                                    args.small_dense_patch_num_one_side,
                                                                     batch_size=batch_size_here,
                                                                     image_size=image_size,
                                                                     patch_size=patch_size,
