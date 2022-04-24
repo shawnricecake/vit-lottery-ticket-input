@@ -386,7 +386,8 @@ def validate(config, data_loader, model, args, model_pretrained):
 
         #########################################################################################################
         batch_size_here = images.shape[0]
-        if args.lottery and model_pretrained is not None:
+        if args.lottery and model_pretrained is not None \
+                and (args.small_dense_input or args.sparse_eval_with_zero):
             outputs = model_pretrained(images, keep_rate=args.base_keep_rate)
             all_index_record = []
             for e in model_pretrained.blocks:
