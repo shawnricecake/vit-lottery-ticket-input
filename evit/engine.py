@@ -82,71 +82,71 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
                 all_index_record = []
 
                 #######################################################################################################
-                left_tokens_pre = N - 1
-                left_tokens = math.ceil(keep_rate * (N - 1))
-                mask1 = torch.rand(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
-                mask1 = mask1 * left_tokens_pre
-                mask1 = mask1.type(torch.int64)
-                mask1 = mask1.repeat(1, 1, repeat)
-                all_index_record.append(mask1)
-                left_tokens_pre = left_tokens
-                left_tokens = math.ceil(keep_rate * left_tokens)
-                mask2 = torch.rand(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
-                mask2 = mask2 * left_tokens_pre
-                mask2 = mask2.type(torch.int64)
-                mask2 = mask2.repeat(1, 1, repeat)
-                all_index_record.append(mask2)
-                left_tokens_pre = left_tokens
-                left_tokens = math.ceil(keep_rate * left_tokens)
-                mask3 = torch.rand(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
-                mask3 = mask3 * left_tokens_pre
-                mask3 = mask3.type(torch.int64)
-                mask3 = mask3.repeat(1, 1, repeat)
-                all_index_record.append(mask3)
-                #######################################################################################################
-
-                #######################################################################################################
                 # left_tokens_pre = N - 1
                 # left_tokens = math.ceil(keep_rate * (N - 1))
-                # mask1 = torch.zeros(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
-                # for b in range(batch_size_here):
-                #     mask_tt = np.random.choice(left_tokens_pre, left_tokens, replace=False)
-                #     mask_tt = np.array([mask_tt])
-                #     mask_tt = np.transpose(mask_tt)
-                #     mask_tt = torch.from_numpy(mask_tt)
-                #     mask_tt = mask_tt.to(device, non_blocking=True)
-                #     mask1[b, :, :] = mask_tt
+                # mask1 = torch.rand(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
+                # mask1 = mask1 * left_tokens_pre
                 # mask1 = mask1.type(torch.int64)
                 # mask1 = mask1.repeat(1, 1, repeat)
                 # all_index_record.append(mask1)
-                #
                 # left_tokens_pre = left_tokens
                 # left_tokens = math.ceil(keep_rate * left_tokens)
-                # mask2 = torch.zeros(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
-                # for b in range(batch_size_here):
-                #     mask_tt = np.random.choice(left_tokens_pre, left_tokens, replace=False)
-                #     mask_tt = np.array([mask_tt])
-                #     mask_tt = np.transpose(mask_tt)
-                #     mask_tt = torch.from_numpy(mask_tt)
-                #     mask_tt = mask_tt.to(device, non_blocking=True)
-                #     mask2[b, :, :] = mask_tt
+                # mask2 = torch.rand(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
+                # mask2 = mask2 * left_tokens_pre
                 # mask2 = mask2.type(torch.int64)
                 # mask2 = mask2.repeat(1, 1, repeat)
                 # all_index_record.append(mask2)
-                #
                 # left_tokens_pre = left_tokens
                 # left_tokens = math.ceil(keep_rate * left_tokens)
-                # mask3 = torch.zeros(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
-                # for b in range(batch_size_here):
-                #     mask_tt = np.random.choice(left_tokens_pre, left_tokens, replace=False)
-                #     mask_tt = np.array([mask_tt])
-                #     mask_tt = np.transpose(mask_tt)
-                #     mask_tt = torch.from_numpy(mask_tt)
-                #     mask_tt = mask_tt.to(device, non_blocking=True)
-                #     mask3[b, :, :] = mask_tt
+                # mask3 = torch.rand(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
+                # mask3 = mask3 * left_tokens_pre
                 # mask3 = mask3.type(torch.int64)
                 # mask3 = mask3.repeat(1, 1, repeat)
                 # all_index_record.append(mask3)
+                #######################################################################################################
+
+                #######################################################################################################
+                left_tokens_pre = N - 1
+                left_tokens = math.ceil(keep_rate * (N - 1))
+                mask1 = torch.zeros(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
+                for b in range(batch_size_here):
+                    mask_tt = np.random.choice(left_tokens_pre, left_tokens, replace=False)
+                    mask_tt = np.array([mask_tt])
+                    mask_tt = np.transpose(mask_tt)
+                    mask_tt = torch.from_numpy(mask_tt)
+                    mask_tt = mask_tt.to(device, non_blocking=True)
+                    mask1[b, :, :] = mask_tt
+                mask1 = mask1.type(torch.int64)
+                mask1 = mask1.repeat(1, 1, repeat)
+                all_index_record.append(mask1)
+
+                left_tokens_pre = left_tokens
+                left_tokens = math.ceil(keep_rate * left_tokens)
+                mask2 = torch.zeros(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
+                for b in range(batch_size_here):
+                    mask_tt = np.random.choice(left_tokens_pre, left_tokens, replace=False)
+                    mask_tt = np.array([mask_tt])
+                    mask_tt = np.transpose(mask_tt)
+                    mask_tt = torch.from_numpy(mask_tt)
+                    mask_tt = mask_tt.to(device, non_blocking=True)
+                    mask2[b, :, :] = mask_tt
+                mask2 = mask2.type(torch.int64)
+                mask2 = mask2.repeat(1, 1, repeat)
+                all_index_record.append(mask2)
+
+                left_tokens_pre = left_tokens
+                left_tokens = math.ceil(keep_rate * left_tokens)
+                mask3 = torch.zeros(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
+                for b in range(batch_size_here):
+                    mask_tt = np.random.choice(left_tokens_pre, left_tokens, replace=False)
+                    mask_tt = np.array([mask_tt])
+                    mask_tt = np.transpose(mask_tt)
+                    mask_tt = torch.from_numpy(mask_tt)
+                    mask_tt = mask_tt.to(device, non_blocking=True)
+                    mask3[b, :, :] = mask_tt
+                mask3 = mask3.type(torch.int64)
+                mask3 = mask3.repeat(1, 1, repeat)
+                all_index_record.append(mask3)
                 #######################################################################################################
 
                 model.module.all_idx_record = all_index_record
