@@ -266,6 +266,8 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
                     e = e.detach().cpu()
                     total_original_index = torch.gather(total_original_index, dim=1, index=e)
             total_original_index = total_original_index[:, :, 0]  # [B, left_tokens]
+            total_original_index = torch.sort(total_original_index, dim=1)
+            total_original_index = total_original_index.values
             # --------------------------
             if args.small_dense_input:
                 assert total_original_index.shape[1] == \
