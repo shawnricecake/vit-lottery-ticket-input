@@ -91,6 +91,12 @@ def parse_option():
     parser.add_argument('--small-dense-patch-num-one-side', default=13, type=int)
     parser.add_argument('--small-dense-input-size', default=192, type=int,
                         help='small-dense-patch-num-one-side * patch size')
+    parser.add_argument('--sparse-eval-with-zero', action='store_true', help='when it is small dense, we can only'
+                                                                             'evaluate with small dense input in '
+                                                                             'test part because the model can only be '
+                                                                             'fed with small input images, but when '
+                                                                             'we use zero sparse on input images, we '
+                                                                             'could choose if we use the sparse test')
     #########################################################################################################
 
     # distributed training
@@ -181,14 +187,16 @@ def main(args, config):
 
     if config.MODEL.RESUME:
         max_accuracy = load_checkpoint(config, model_without_ddp, optimizer, lr_scheduler, logger)
-        acc1, acc5, loss = validate(config, data_loader_val, model)
+        acc1, acc5, loss = validate(config, data_loader_val, model,
+                                    args, model_pretrained)
         logger.info(f"Accuracy of the network on the {len(dataset_val)} test images: {acc1:.1f}%")
         if config.EVAL_MODE:
             return
 
     if config.MODEL.PRETRAINED and (not config.MODEL.RESUME):
         load_pretrained(config, model_without_ddp, logger)
-        acc1, acc5, loss = validate(config, data_loader_val, model)
+        acc1, acc5, loss = validate(config, data_loader_val, model,
+                                    args, model_pretrained)
         logger.info(f"Accuracy of the network on the {len(dataset_val)} test images: {acc1:.1f}%")
 
     if config.THROUGHPUT_MODE:
@@ -207,7 +215,8 @@ def main(args, config):
             save_last_checkpoint(config, epoch, model_without_ddp, max_accuracy, optimizer, lr_scheduler, logger)
             save_best_checkpoint(config, epoch, model_without_ddp, max_accuracy, optimizer, lr_scheduler, logger)
 
-        acc1, acc5, loss = validate(config, data_loader_val, model)
+        acc1, acc5, loss = validate(config, data_loader_val, model,
+                                    args, model_pretrained)
         logger.info(f"Accuracy of the network on the {len(dataset_val)} test images: {acc1:.3f}%")
         max_accuracy = max(max_accuracy, acc1)
         logger.info(f'Max accuracy: {max_accuracy:.2f}%')
@@ -272,11 +281,11 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
             if args.small_dense_input:
                 assert total_original_index.shape[1] == \
                        args.small_dense_patch_num_one_side * args.small_dense_patch_num_one_side, \
-                       "the output number of tokens is {}, but your input small dense input size is {}, " \
-                       "it is incorrect because {}^2 != {}".format(total_original_index.shape[1],
-                                                                   args.small_dense_patch_num_one_side,
-                                                                   args.small_dense_patch_num_one_side,
-                                                                   total_original_index.shape[1])
+                    "the output number of tokens is {}, but your input small dense input size is {}, " \
+                    "it is incorrect because {}^2 != {}".format(total_original_index.shape[1],
+                                                                args.small_dense_patch_num_one_side,
+                                                                args.small_dense_patch_num_one_side,
+                                                                total_original_index.shape[1])
                 samples = \
                     go_back_original_input_and_generate_small_dense(index=total_original_index,
                                                                     left_tokens=total_original_index.shape[1],
@@ -361,7 +370,7 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
 
 
 @torch.no_grad()
-def validate(config, data_loader, model):
+def validate(config, data_loader, model, args, model_pretrained):
     criterion = torch.nn.CrossEntropyLoss()
     model.eval()
 
@@ -374,6 +383,67 @@ def validate(config, data_loader, model):
     for idx, (images, target) in enumerate(data_loader):
         images = images.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True)
+
+        #########################################################################################################
+        batch_size_here = images.shape[0]
+        if args.lottery and model_pretrained is not None:
+            outputs = model_pretrained(images, keep_rate=args.base_keep_rate)
+            all_index_record = []
+            for e in model_pretrained.blocks:
+                all_index_record.append(e.idx_record)
+            # get the original index on input image
+            if "small" in args.lottery_model_type:
+                repeat = 384
+            elif "tiny" in args.lottery_model_type:
+                repeat = 192
+            elif "base" in args.lottery_model_type:
+                repeat = 768
+            else:
+                exit("we did not support this kind of teacher model now")
+            # for deit tiny, small and base, these parameters are same
+            N_here = 196
+            image_size = 224
+            patch_num_one_side = 14
+            patch_size = 16
+            total_original_index = torch.arange(0, N_here)
+            total_original_index = total_original_index.view(1, N_here)
+            total_original_index = total_original_index.repeat(batch_size_here, 1)
+            total_original_index = total_original_index.unsqueeze(-1).expand(-1, -1, repeat)
+            for e in all_index_record:
+                if e is not None:
+                    e = e.detach().cpu()
+                    total_original_index = torch.gather(total_original_index, dim=1, index=e)
+            total_original_index = total_original_index[:, :, 0]  # [B, left_tokens]
+            total_original_index = torch.sort(total_original_index, dim=1)
+            total_original_index = total_original_index.values
+            # --------------------------
+            if args.small_dense_input:
+                assert total_original_index.shape[1] == \
+                       args.small_dense_patch_num_one_side * args.small_dense_patch_num_one_side, \
+                       "the output number of tokens is {}, but your input small dense input size is {}, " \
+                       "it is incorrect because {}^2 != {}".format(total_original_index.shape[1],
+                                                                   args.small_dense_patch_num_one_side,
+                                                                   args.small_dense_patch_num_one_side,
+                                                                   total_original_index.shape[1])
+                images = \
+                    go_back_original_input_and_generate_small_dense(index=total_original_index,
+                                                                    left_tokens=total_original_index.shape[1],
+                                                                    left_patch_num_one_side=
+                                                                    args.small_dense_patch_num_one_side,
+                                                                    batch_size=batch_size_here,
+                                                                    image_size=image_size,
+                                                                    patch_size=patch_size,
+                                                                    patch_num_one_side=patch_num_one_side,
+                                                                    images=images)
+            elif args.sparse_eval_with_zero:
+                images = go_back_original_input_with_zero(index=total_original_index,
+                                                          batch_size=batch_size_here,
+                                                          image_size=image_size,
+                                                          patch_size=patch_size,
+                                                          patch_num_one_side=patch_num_one_side,
+                                                          images=images)
+            # --------------------------
+        #########################################################################################################
 
         # compute output
         output = model(images)
