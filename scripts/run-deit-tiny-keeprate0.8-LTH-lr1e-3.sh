@@ -17,6 +17,7 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --model deit_tiny_patch16_shrink_base \
         --lottery ../checkpoints/exp-deit-tiny-keeprate0.8-load-pretrain-finetune/best_checkpoint.pth \
         --base_keep_rate 0.8 \
+        --lr 1e-3 \
         --input-size 224 \
         --batch-size 128 \
         --warmup-epochs 5 \
@@ -26,4 +27,4 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --dist-eval \
         --data-path ${data_path} \
         --output_dir ${save_path} \
-2>&1 | tee ../logs/exp-deit-tiny-keeprate0.8-LTH-lr1e-3.txt
+> ../scripts/exp-deit-tiny-keeprate0.8-LTH-lr1e-3.txt 2>&1 &
