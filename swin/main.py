@@ -33,6 +33,7 @@ from utils import load_checkpoint, load_pretrained, \
 ######################
 from timm.models import create_model
 import sys
+import math
 
 sys.path.append("../")
 from evit.vision_transformer import deit_small_patch16_shrink_base, \
@@ -406,6 +407,103 @@ def validate(config, data_loader, model, args, model_pretrained):
             image_size = 224
             patch_num_one_side = 14
             patch_size = 16
+            total_original_index = torch.arange(0, N_here)
+            total_original_index = total_original_index.view(1, N_here)
+            total_original_index = total_original_index.repeat(batch_size_here, 1)
+            total_original_index = total_original_index.unsqueeze(-1).expand(-1, -1, repeat)
+            for e in all_index_record:
+                if e is not None:
+                    e = e.detach().cpu()
+                    total_original_index = torch.gather(total_original_index, dim=1, index=e)
+            total_original_index = total_original_index[:, :, 0]  # [B, left_tokens]
+            total_original_index = torch.sort(total_original_index, dim=1)
+            total_original_index = total_original_index.values
+            # --------------------------
+            if args.small_dense_input:
+                assert total_original_index.shape[1] == \
+                       args.small_dense_patch_num_one_side * args.small_dense_patch_num_one_side, \
+                       "the output number of tokens is {}, but your input small dense input size is {}, " \
+                       "it is incorrect because {}^2 != {}".format(total_original_index.shape[1],
+                                                                   args.small_dense_patch_num_one_side,
+                                                                   args.small_dense_patch_num_one_side,
+                                                                   total_original_index.shape[1])
+                images = \
+                    go_back_original_input_and_generate_small_dense(index=total_original_index,
+                                                                    left_tokens=total_original_index.shape[1],
+                                                                    left_patch_num_one_side=
+                                                                    args.small_dense_patch_num_one_side,
+                                                                    batch_size=batch_size_here,
+                                                                    image_size=image_size,
+                                                                    patch_size=patch_size,
+                                                                    patch_num_one_side=patch_num_one_side,
+                                                                    images=images)
+            elif args.sparse_eval_with_zero:
+                images = go_back_original_input_with_zero(index=total_original_index,
+                                                          batch_size=batch_size_here,
+                                                          image_size=image_size,
+                                                          patch_size=patch_size,
+                                                          patch_num_one_side=patch_num_one_side,
+                                                          images=images)
+            # --------------------------
+        elif args.random:
+            all_index_record = []
+            if "small" in args.lottery_model_type:
+                repeat = 384
+            elif "tiny" in args.lottery_model_type:
+                repeat = 192
+            elif "base" in args.lottery_model_type:
+                repeat = 768
+            else:
+                exit("we did not support this kind of teacher model now")
+            # for deit tiny, small and base, these parameters are same
+            N_here = 196
+            image_size = 224
+            patch_num_one_side = 14
+            patch_size = 16
+            keep_rate = args.base_keep_rate
+
+            left_tokens_pre = N_here
+            left_tokens = math.ceil(keep_rate * N_here)
+            mask1 = torch.zeros(batch_size_here, left_tokens, 1, requires_grad=False).cuda(non_blocking=True)
+            for b in range(batch_size_here):
+                mask_tt = np.random.choice(left_tokens_pre, left_tokens, replace=False)
+                mask_tt = np.array([mask_tt])
+                mask_tt = np.transpose(mask_tt)
+                mask_tt = torch.from_numpy(mask_tt)
+                mask_tt = mask_tt.cuda(non_blocking=True)
+                mask1[b, :, :] = mask_tt
+            mask1 = mask1.type(torch.int64)
+            mask1 = mask1.repeat(1, 1, repeat)
+            all_index_record.append(mask1)
+
+            left_tokens_pre = left_tokens
+            left_tokens = math.ceil(keep_rate * left_tokens)
+            mask2 = torch.zeros(batch_size_here, left_tokens, 1, requires_grad=False).cuda(non_blocking=True)
+            for b in range(batch_size_here):
+                mask_tt = np.random.choice(left_tokens_pre, left_tokens, replace=False)
+                mask_tt = np.array([mask_tt])
+                mask_tt = np.transpose(mask_tt)
+                mask_tt = torch.from_numpy(mask_tt)
+                mask_tt = mask_tt.cuda(non_blocking=True)
+                mask2[b, :, :] = mask_tt
+            mask2 = mask2.type(torch.int64)
+            mask2 = mask2.repeat(1, 1, repeat)
+            all_index_record.append(mask2)
+
+            left_tokens_pre = left_tokens
+            left_tokens = math.ceil(keep_rate * left_tokens)
+            mask3 = torch.zeros(batch_size_here, left_tokens, 1, requires_grad=False).cuda(non_blocking=True)
+            for b in range(batch_size_here):
+                mask_tt = np.random.choice(left_tokens_pre, left_tokens, replace=False)
+                mask_tt = np.array([mask_tt])
+                mask_tt = np.transpose(mask_tt)
+                mask_tt = torch.from_numpy(mask_tt)
+                mask_tt = mask_tt.cuda(non_blocking=True)
+                mask3[b, :, :] = mask_tt
+            mask3 = mask3.type(torch.int64)
+            mask3 = mask3.repeat(1, 1, repeat)
+            all_index_record.append(mask3)
+
             total_original_index = torch.arange(0, N_here)
             total_original_index = total_original_index.view(1, N_here)
             total_original_index = total_original_index.repeat(batch_size_here, 1)
