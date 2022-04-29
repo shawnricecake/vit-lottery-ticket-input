@@ -1101,7 +1101,7 @@ def deit_base_patch16_shrink_base_dim576(pretrained=False, base_keep_rate=0.7, d
     keep_rate = [1] * 12
     for loc in drop_loc:
         keep_rate[loc] = base_keep_rate
-    model_kwargs = dict(patch_size=16, embed_dim=576, depth=12, num_heads=12, keep_rate=keep_rate)
+    model_kwargs = dict(patch_size=16, embed_dim=576, depth=12, num_heads=9, keep_rate=keep_rate)
     model_kwargs.update(kwargs)
     model = _create_vision_transformer('deit_base_patch16_224', pretrained=pretrained, **model_kwargs)
     return model
