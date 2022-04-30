@@ -246,30 +246,6 @@ def evaluate_sparse(data_loader, model, device, keep_rate=None, args=None,
                 all_index_record = []
 
                 #######################################################################################################
-                # left_tokens_pre = N - 1
-                # left_tokens = math.ceil(keep_rate * (N - 1))
-                # mask1 = torch.rand(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
-                # mask1 = mask1 * left_tokens_pre
-                # mask1 = mask1.type(torch.int64)
-                # mask1 = mask1.repeat(1, 1, repeat)
-                # all_index_record.append(mask1)
-                # left_tokens_pre = left_tokens
-                # left_tokens = math.ceil(keep_rate * left_tokens)
-                # mask2 = torch.rand(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
-                # mask2 = mask2 * left_tokens_pre
-                # mask2 = mask2.type(torch.int64)
-                # mask2 = mask2.repeat(1, 1, repeat)
-                # all_index_record.append(mask2)
-                # left_tokens_pre = left_tokens
-                # left_tokens = math.ceil(keep_rate * left_tokens)
-                # mask3 = torch.rand(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
-                # mask3 = mask3 * left_tokens_pre
-                # mask3 = mask3.type(torch.int64)
-                # mask3 = mask3.repeat(1, 1, repeat)
-                # all_index_record.append(mask3)
-                #######################################################################################################
-
-                #######################################################################################################
                 left_tokens_pre = N - 1
                 left_tokens = math.ceil(keep_rate * (N - 1))
                 mask1 = torch.zeros(batch_size_here, left_tokens, 1, requires_grad=False).to(device, non_blocking=True)
