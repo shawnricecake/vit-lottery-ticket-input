@@ -93,11 +93,9 @@ def parse_option():
     parser.add_argument('--small-dense-input-size', default=192, type=int,
                         help='small-dense-patch-num-one-side * patch size')
     parser.add_argument('--sparse-eval-with-zero', action='store_true', help='when it is small dense, we can only'
-                                                                             'evaluate with small dense input in '
-                                                                             'test part because the model can only be '
-                                                                             'fed with small input images, but when '
-                                                                             'we use zero sparse on input images, we '
-                                                                             'could choose if we use the sparse test')
+                        'evaluate with small dense input in test part because the model can only be fed with '
+                        'small input images, but when we use zero sparse on input images, we could choose '
+                        'if we use the sparse test')
     #########################################################################################################
 
     # distributed training
