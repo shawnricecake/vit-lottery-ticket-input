@@ -24,6 +24,7 @@ wheels/
 share/python-wheels/
 *.egg-info/
 helloworld/
+lvvit/helloworld.py
 evit/helloworld.py
 .installed.cfg
 *.egg
