@@ -1,6 +1,5 @@
 cd ../lvvit/
 
-label_data="path/to/label_data"
 data_path="/home/ImageNet"
 save_path="../checkpoints/exp-lvvit-small-keeprate0.85-RR"
 mkdir -p $save_path
@@ -15,9 +14,6 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --apex-amp \
         --img-size 224 \
         --drop-path 0.1 \
-        --token-label \
-        --token-label-data ${label_data} \
-        --token-label-size 14 \
         --model-ema \
         --data_dir ${data_path} \
         --output ${save_path} \
