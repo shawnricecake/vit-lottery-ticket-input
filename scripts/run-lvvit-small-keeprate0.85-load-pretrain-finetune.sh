@@ -10,6 +10,7 @@ nohup \
 python3 -m torch.distributed.launch --nproc_per_node=8 \
         main.py \
         --model lvvit_small_sparse \
+        --base_keep_rate 0.85 \
         --batch-size 256 \
         --epochs 30 \
         --finetune https://github.com/zihangJiang/TokenLabeling/releases/download/1.0/lvvit_s-26M-224-83.3.pth.tar \

@@ -286,7 +286,7 @@ parser.add_argument('--finetune', default='', type=str, metavar='PATH',
 # sx add
 parser.add_argument('--base_keep_rate', type=float, default=1.0, help='base keep rate')
 parser.add_argument('--lottery', default='', type=str, help='path to pretrained model')
-parser.add_argument('--lottery_model_type', default='', type=str, help='pretrained model type')
+parser.add_argument('--lottery-model-type', default='', type=str, help='pretrained model type')
 parser.add_argument('--random', action='store_true', help='run RR experiment')
 
 ##############################################################################
@@ -365,7 +365,7 @@ def main():
         scriptable=args.torchscript,
         checkpoint_path=args.initial_checkpoint,
         img_size=args.img_size,
-        base_keep_rate=args.base_keep_rate)
+        base_keep_rate=args.base_keep_rate if not (args.lottery or args.random) else 1)
 
     #########################################################################################################
     model_pretrained = None
@@ -811,7 +811,7 @@ def train_one_epoch(
                 model.module.all_idx_record = all_index_record
                 #######################################################################################################
 
-            output = model(input, keep_rate=keep_rate if not (args.lottery or args.random) else None)
+            output = model(input, keep_rate=keep_rate)
 
             #####################################################
             # return to None for the test part

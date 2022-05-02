@@ -281,12 +281,13 @@ def lvvit_s(pretrained=False, **kwargs):
 
 ############################################################################################
 @register_model
-def lvvit_tiny_small(pretrained=False, base_keep_rate=0.85, drop_loc=(3, 6, 9), **kwargs):
+def lvvit_tiny_sparse(pretrained=False, base_keep_rate=0.85, drop_loc=(3, 6, 9), **kwargs):
     keep_rate = [1] * 12
     for loc in drop_loc:
         keep_rate[loc] = base_keep_rate
     model = LV_ViT(patch_size=16, embed_dim=240, depth=12, num_heads=4, mlp_ratio=3.,
-        p_emb='4_2',skip_lam=1., return_dense=True,mix_token=True, **kwargs)
+                   p_emb='4_2',skip_lam=1., return_dense=True,mix_token=True,
+                   keep_rate=keep_rate, **kwargs)
     model.default_cfg = default_cfgs['LV_ViT_Tiny']
     return model
 
@@ -297,7 +298,8 @@ def lvvit_small_sparse(pretrained=False, base_keep_rate=0.85, drop_loc=(4, 8, 12
     for loc in drop_loc:
         keep_rate[loc] = base_keep_rate
     model = LV_ViT(patch_size=16, embed_dim=384, depth=16, num_heads=6, mlp_ratio=3.,
-        p_emb='4_2',skip_lam=2., return_dense=True, mix_token=True, **kwargs)
+                   p_emb='4_2',skip_lam=2., return_dense=True, mix_token=True,
+                   keep_rate=keep_rate, **kwargs)
     model.default_cfg = default_cfgs['LV_ViT']
     return model
 ############################################################################################

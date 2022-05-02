@@ -10,6 +10,8 @@ nohup \
 python3 -m torch.distributed.launch --nproc_per_node=8 \
         main.py \
         --model lvvit_small_sparse \
+        --base_keep_rate 0.85 \
+        --random \
         --batch-size 128 \
         --epochs 300 \
         --apex-amp \
