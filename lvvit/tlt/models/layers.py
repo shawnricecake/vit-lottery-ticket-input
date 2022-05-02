@@ -180,9 +180,9 @@ class Block(nn.Module):
         #####################################################
 
     def forward(self, x, padding_mask=None, keep_rate=None):
-
-        x, index, idx, cls_attn, left_tokens = self.attn(self.norm1(x),padding_mask, keep_rate)
-        x = x + self.drop_path(x)/self.skip_lam
+        input_x = x
+        x, index, idx, cls_attn, left_tokens = self.attn(self.norm1(input_x),padding_mask, keep_rate)
+        x = input_x + self.drop_path(x)/self.skip_lam
 
         if index is not None:
             #####################################################
@@ -248,9 +248,9 @@ class MHABlock(nn.Module):
         #####################################################
 
     def forward(self, x, padding_mask=None, keep_rate=None):
-
-        x, index, idx, cls_attn, left_tokens = self.attn(self.norm1(x*self.skip_lam), padding_mask, keep_rate)
-        x = x + self.drop_path(x)/self.skip_lam
+        input_x = x
+        x, index, idx, cls_attn, left_tokens = self.attn(self.norm1(input_x*self.skip_lam), padding_mask, keep_rate)
+        x = input_x + self.drop_path(x)/self.skip_lam
 
         if index is not None:
             #####################################################
