@@ -7,7 +7,7 @@ cd ../swin/
 # because the window size should be suitable for the "small-dense-input-size" i.e., can be divided
 
 data_path=${1:-"/home/ImageNet"}
-save_path="../checkpoints/exp-swin-tiny-keeprate0.9-RR"
+save_path="../checkpoints/exp-swin-tiny-keeprate0.9-RR-small-dense"
 mkdir -p $save_path
 
 CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" \
@@ -26,4 +26,4 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --amp-opt-level O1 \
         --output ${save_path} \
         --data-path ${data_path} \
-> ../scripts/exp-swin-tiny-keeprate0.9-RR.txt 2>&1 &
+> ../scripts/exp-swin-tiny-keeprate0.9-RR-small-dense.txt 2>&1 &
