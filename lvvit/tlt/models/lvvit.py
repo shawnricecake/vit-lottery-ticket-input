@@ -1,3 +1,5 @@
+import math
+
 import torch
 import torch.nn as nn
 
@@ -237,6 +239,13 @@ class LV_ViT(nn.Module):
             x_aux = self.aux_head(x[:,1:])
             if not self.training:
                 return x_cls+0.5*x_aux.max(1)[0]
+
+            ##################################################
+            # write for the base_keep_rate=0.85
+            if keep_rate is not None and keep_rate < 1:
+                patch_h = math.ceil(keep_rate * patch_h - 1)
+                patch_w = math.ceil(keep_rate * patch_w - 1)
+            ##################################################
 
             # recover the mixed part
             if self.mix_token and self.training:
