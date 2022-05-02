@@ -131,6 +131,7 @@ class Attention(nn.Module):
         x = self.proj(x)
         x = self.proj_drop(x)
 
+        ################################################################################
         left_tokens = N - 1
         if self.keep_rate < 1 and keep_rate < 1 or tokens is not None:  # double check the keep rate
             left_tokens = math.ceil(keep_rate * (N - 1))
@@ -149,6 +150,7 @@ class Attention(nn.Module):
             return x, index, idx, cls_attn, left_tokens
 
         return x, None, None, None, left_tokens
+        ################################################################################
 
 
 class Block(nn.Module):
