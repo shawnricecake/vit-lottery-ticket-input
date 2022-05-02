@@ -25,4 +25,4 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --model-ema \
         --data_dir ${data_path} \
         --output ${save_path} \
-> ../scripts/exp-deit-lvvit-keeprate0.85-load-pretrain-finetune.txt 2>&1 &
+> ../scripts/exp-lvvit-keeprate0.85-load-pretrain-finetune.txt 2>&1 &
