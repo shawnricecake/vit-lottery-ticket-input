@@ -391,7 +391,10 @@ def main():
             checkpoint = torch.hub.load_state_dict_from_url(args.lottery, map_location='cpu', check_hash=True)
         else:
             checkpoint = torch.load(args.lottery, map_location='cpu')
-        checkpoint = checkpoint['model']
+        if 'model' in checkpoint:
+            checkpoint = checkpoint['model']
+        if 'state_dict' in checkpoint:
+            checkpoint = checkpoint['state_dict']
         missing_keys, unexpected_keys = model_pretrained.load_state_dict(checkpoint, strict=False)
         print('# missing keys=', missing_keys)
         print('# unexpected keys=', unexpected_keys)
