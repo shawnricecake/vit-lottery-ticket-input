@@ -76,6 +76,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
                 elif "base" in args.model:
                     N = 197
                     repeat = 768
+                    if "dim576" in args.model:
+                        repeat = 576
                 else:
                     assert "Error: have not support this kind model: {}".format(args.model)
                 batch_size_here = samples.shape[0]
