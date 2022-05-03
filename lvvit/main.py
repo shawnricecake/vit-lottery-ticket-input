@@ -819,9 +819,14 @@ def train_one_epoch(
             #####################################################
 
             #####################################################
-            all_index_record = []
-            for e in model.module.blocks:
-                all_index_record.append(e.idx_record)
+            if args.lottery and model_pretrained is not None:
+                all_index_record = all_index_record
+            elif args.random and keep_rate < 1:
+                all_index_record = all_index_record
+            else:
+                all_index_record = []
+                for e in model.module.blocks:
+                    all_index_record.append(e.idx_record)
             #####################################################
 
             loss = loss_fn(output, target,
