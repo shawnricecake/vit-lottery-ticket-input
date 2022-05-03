@@ -14,9 +14,9 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --batch-size 256 \
         --epochs 30 \
         --finetune https://github.com/zihangJiang/TokenLabeling/releases/download/1.0/lvvit_s-26M-224-83.3.pth.tar \
-        --lr 6.4e-5 \
-        --min-lr 2e-6 \
-        --weight-decay 1e-6 \
+        --lr 5e-6 \
+        --min-lr 5e-6 \
+        --weight-decay 1e-8 \
         --apex-amp \
         --img-size 224 \
         --drop-path 0.1 \

@@ -966,6 +966,10 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
 
     metrics = OrderedDict([('loss', losses_m.avg), ('top1', top1_m.avg), ('top5', top5_m.avg)])
 
+    if args.local_rank == 0:
+        print('* Acc@1 {:.3f} Acc@5 {:.3f} loss {:.3f}'
+              .format(top1_m.avg, top5_m.avg, losses_m.avg))
+
     return metrics
 
 
