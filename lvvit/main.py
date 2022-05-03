@@ -228,7 +228,7 @@ parser.add_argument('--model-ema-decay', type=float, default=0.99992,
 # Misc
 parser.add_argument('--seed', type=int, default=42, metavar='S',
                     help='random seed (default: 42)')
-parser.add_argument('--log-interval', type=int, default=50, metavar='N',
+parser.add_argument('--log-interval', type=int, default=1, metavar='N',
                     help='how many batches to wait before logging training status')
 parser.add_argument('--recovery-interval', type=int, default=0, metavar='N',
                     help='how many batches to wait before writing recovery checkpoint')
