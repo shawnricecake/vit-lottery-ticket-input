@@ -818,7 +818,17 @@ def train_one_epoch(
             model.module.all_idx_record = None
             #####################################################
 
-            loss = loss_fn(output, target)
+            #####################################################
+            all_index_record = []
+            for e in model.module.blocks:
+                all_index_record.append(e.idx_record)
+            #####################################################
+
+            loss = loss_fn(output, target,
+                           #####################################################
+                           all_index_record,
+                           input.shape[0], args.token_label_size, args.num_classes)
+                           #####################################################
 
         if not args.distributed:
             losses_m.update(loss.item(), input.size(0))

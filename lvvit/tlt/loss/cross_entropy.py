@@ -16,6 +16,34 @@ class SoftTargetCrossEntropy(nn.Module):
         loss = torch.sum(-target * F.log_softmax(x, dim=-1), dim=-1)
         return loss.mean()
 
+
+############################################################################################################
+class SoftTargetCrossEntropy_reshape(nn.Module):
+
+    def __init__(self):
+        super(SoftTargetCrossEntropy_reshape, self).__init__()
+
+    def forward(self, x, target, all_index_record, batch_size, token_label_size, num_classes):
+        N_rep = x.shape[0]
+        N = target.shape[0]
+        # if not N==N_rep:
+        #     target = target.repeat(N_rep//N,1)
+
+        #####################################################
+        target = target.view(batch_size, token_label_size * token_label_size, num_classes)
+        for e in all_index_record:
+            if e is not None:
+                e = e[:, :, 0:1]
+                e = e.repeat(1, 1, num_classes)
+                target = torch.gather(target, dim=1, index=e)  # [B, left_tokens, C]
+        target = target.view(N_rep, x.shape[1])
+        #####################################################
+
+        loss = torch.sum(-target * F.log_softmax(x, dim=-1), dim=-1)
+        return loss.mean()
+############################################################################################################
+
+
 class TokenLabelSoftTargetCrossEntropy(nn.Module):
 
     def __init__(self):
@@ -45,6 +73,10 @@ class TokenLabelCrossEntropy(nn.Module):
 
         self.CE = SoftTargetCrossEntropy()
 
+        ######################################################
+        self.CE_reshape = SoftTargetCrossEntropy_reshape()
+        ######################################################
+
         self.dense_weight = dense_weight
         self.mixup_active = mixup_active
         self.classes = classes
@@ -53,7 +85,7 @@ class TokenLabelCrossEntropy(nn.Module):
         assert dense_weight+cls_weight>0
 
 
-    def forward(self, x, target):
+    def forward(self, x, target, all_index_record, batch_size, token_label_size, num_classes):
 
         output, aux_output, bb = x
         bbx1, bby1, bbx2, bby2 = bb
@@ -78,6 +110,10 @@ class TokenLabelCrossEntropy(nn.Module):
 
         aux_output = aux_output.reshape(-1,C)
         loss_cls = self.CE(output, target_cls)
-        loss_aux = self.CE(aux_output, target_aux)
+
+        ######################################################
+        loss_aux = self.CE_reshape(aux_output, target_aux, all_index_record, batch_size, token_label_size, num_classes)
+        ######################################################
+
         return self.cls_weight*loss_cls+self.dense_weight* loss_aux
 
