@@ -8,7 +8,7 @@ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" \
 nohup \
 python3 -m torch.distributed.launch --nproc_per_node=8 \
         main.py \
-        --cfg configs/swin_tiny_patch4_window6_224.yaml \
+        --cfg configs/swin_tiny_patch4_window7_224.yaml \
         --random \
         --lottery-model-type deit_small_patch16_shrink_base \
         --base_keep_rate 0.9 \
