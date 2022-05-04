@@ -219,8 +219,10 @@ def go_back_original_input_with_zero(index, batch_size, image_size, patch_size, 
     images = images.permute(0, 1, 2, 4, 3, 5)
     images = images.reshape(batch_size, 3, patch_num_one_side * patch_num_one_side, patch_size, patch_size)
 
+    mask = torch.zeros(batch_size, 3, patch_num_one_side * patch_num_one_side, patch_size, patch_size).to(images.device)
     for i in range(batch_size):
-        images[i, :, index[i, :], :, :] = 0
+        mask[i, :, index[i, :], :, :] = 1
+    images = images * mask
 
     images = images.reshape(batch_size, 3, patch_num_one_side, patch_num_one_side, patch_size, patch_size)
     images = images.permute(0, 1, 2, 4, 3, 5)
