@@ -14,6 +14,10 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --base_keep_rate 0.38 \
         --input-size 224 \
         --batch-size 128 \
+        --adjust-keep-rate \
+        --warmup-epochs 5 \
+        --shrink_start_epoch 10 \
+        --shrink_epochs 100 \
         --epochs 300 \
         --dist-eval \
         --data-path ${data_path} \
