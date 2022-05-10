@@ -13,6 +13,8 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --base_keep_rate 0.85 \
         --lottery ../checkponts/exp-lvvit-small-keeprate0.85-load-pretrain-finetune/checkpoint.pth \
         --lottery-model-type lvvit_small_sparse \
+        --resume ../checkponts/exp-lvvit-small-keeprate0.85-LTH/best_checkpoint.pth \
+        --sparse-eval \
         --batch-size 128 \
         --epochs 300 \
         --apex-amp \
