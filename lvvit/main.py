@@ -288,7 +288,8 @@ parser.add_argument('--base_keep_rate', type=float, default=1.0, help='base keep
 parser.add_argument('--lottery', default='', type=str, help='path to pretrained model')
 parser.add_argument('--lottery-model-type', default='', type=str, help='pretrained model type')
 parser.add_argument('--random', action='store_true', help='run RR experiment')
-
+parser.add_argument('--sparse-eval', action='store_true', default=False,
+                    help='just evaluation')
 ##############################################################################
 
 
@@ -653,6 +654,10 @@ def main():
     try:
         if args.finetune:
             validate(model, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast)
+        if args.sparse_eval:
+            validate_sparse(model, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast,
+                            model_pretrained=model_pretrained)
+            return
         for epoch in range(start_epoch, num_epochs):
             if args.distributed and hasattr(loader_train.sampler, 'set_epoch'):
                 loader_train.sampler.set_epoch(epoch)
@@ -956,6 +961,103 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
             torch.cuda.synchronize()
 
             losses_m.update(reduced_loss.item(), input.size(0))
+            top1_m.update(acc1.item(), output.size(0))
+            top5_m.update(acc5.item(), output.size(0))
+
+            batch_time_m.update(time.time() - end)
+            end = time.time()
+            if args.local_rank == 0 and (last_batch or batch_idx % args.log_interval == 0):
+                log_name = 'Test' + log_suffix
+                _logger.info(
+                    '{0}: [{1:>4d}/{2}]  '
+                    'Time: {batch_time.val:.3f} ({batch_time.avg:.3f})  '
+                    'Loss: {loss.val:>7.4f} ({loss.avg:>6.4f})  '
+                    'Acc@1: {top1.val:>7.4f} ({top1.avg:>7.4f})  '
+                    'Acc@5: {top5.val:>7.4f} ({top5.avg:>7.4f})'.format(
+                        log_name, batch_idx, last_idx, batch_time=batch_time_m,
+                        loss=losses_m, top1=top1_m, top5=top5_m))
+
+    metrics = OrderedDict([('loss', losses_m.avg), ('top1', top1_m.avg), ('top5', top5_m.avg)])
+
+    if args.local_rank == 0:
+        print('* Acc@1 {:.3f} Acc@5 {:.3f} loss {:.3f}'
+              .format(top1_m.avg, top5_m.avg, losses_m.avg))
+
+    return metrics
+
+
+def validate_sparse(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='', model_pretrained=None):
+    batch_time_m = AverageMeter()
+    losses_m = AverageMeter()
+    top1_m = AverageMeter()
+    top5_m = AverageMeter()
+
+    model.eval()
+
+    end = time.time()
+    last_idx = len(loader) - 1
+    with torch.no_grad():
+        for batch_idx, (input, target) in enumerate(loader):
+            last_batch = batch_idx == last_idx
+            if not args.prefetcher:
+                input = input.cuda()
+                target = target.cuda()
+            if args.channels_last:
+                input = input.contiguous(memory_format=torch.channels_last)
+
+            with amp_autocast():
+
+                keep_rate = args.base_keep_rate
+                #####################################################
+                if args.lottery and model_pretrained is not None:
+                    outputs = model_pretrained(input, keep_rate=keep_rate)
+                    all_index_record = []
+                    for e in model_pretrained.blocks:
+                        all_index_record.append(e.idx_record)
+                    model.module.all_idx_record = all_index_record
+                #####################################################
+
+                output = model(input, keep_rate=1)
+
+                #####################################################
+                # return to None for next test
+                model.module.all_idx_record = None
+                #####################################################
+
+                #####################################################
+                if args.lottery and model_pretrained is not None:
+                    all_index_record = all_index_record
+                else:
+                    all_index_record = []
+                    for e in model.module.blocks:
+                        all_index_record.append(e.idx_record)
+                #####################################################
+
+            if isinstance(output, (tuple, list)):
+                output = output[0]
+                if args.cls_weight==0:
+                    output=output[1].mean(1)
+
+            # augmentation reduction
+            reduce_factor = args.tta
+            if reduce_factor > 1:
+                output = output.unfold(0, reduce_factor, reduce_factor).mean(dim=2)
+                target = target[0:target.size(0):reduce_factor]
+
+            # loss = loss_fn(output, target)
+            acc1, acc5 = accuracy(output, target, topk=(1, 5))
+
+            if args.distributed:
+                # reduced_loss = reduce_tensor(loss.data, args.world_size)
+                acc1 = reduce_tensor(acc1, args.world_size)
+                acc5 = reduce_tensor(acc5, args.world_size)
+            else:
+                # reduced_loss = loss.data
+                print()
+
+            torch.cuda.synchronize()
+
+            # losses_m.update(reduced_loss.item(), input.size(0))
             top1_m.update(acc1.item(), output.size(0))
             top5_m.update(acc5.item(), output.size(0))
 
