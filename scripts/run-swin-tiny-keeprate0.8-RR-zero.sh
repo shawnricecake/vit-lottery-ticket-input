@@ -12,7 +12,6 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         --random \
         --lottery-model-type deit_small_patch16_shrink_base \
         --base_keep_rate 0.8 \
-        --sparse-eval-with-zero \
         --batch-size 128 \
         --epochs 300 \
         --amp-opt-level O1 \
