@@ -10,6 +10,7 @@ python3 -m torch.distributed.launch --nproc_per_node=8 \
         main.py \
         --cfg configs/swin_tiny_patch4_window7_224.yaml \
         --sparse-eval-with-zero \
+        --base_keep_rate 0.9 \
         --resume ../checkpoints/exp-swin-tiny-keeprate0.9-LTH-zero-deit-small-keeprate0.9-teacher/swin_tiny_patch4_window7_224/default/best_checkpoint.pth \
         --eval \
         --batch-size 128 \
