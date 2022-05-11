@@ -60,7 +60,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
         with torch.cuda.amp.autocast():
 
             #####################################################
-            if args.lottery and model_pretrained is not None:
+            if args.lottery and model_pretrained is not None and keep_rate < 1:
                 outputs = model_pretrained(samples, keep_rate=keep_rate)
                 all_index_record = []
                 for e in model_pretrained.blocks:
