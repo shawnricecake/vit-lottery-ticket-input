@@ -53,3 +53,9 @@ You can revise the keep rate as you want:
 bash run-swin-tiny-keeprate0.xxx-LTH.sh
 ```
 
+
+### LV-ViT
+Generate token label data for training of LV-ViT
+```
+python3 generate_label.py /path/to/imagenet/train /path/to/save/label_top5_train_nfnet --model dm_nfnet_f6 --pretrained --img-size 576 -b 32 --crop-pct 1.0
+```
