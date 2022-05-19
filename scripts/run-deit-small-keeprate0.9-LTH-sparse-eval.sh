@@ -1,4 +1,4 @@
-cd ../evit/
+cd ../deit/
 
 # Sparse Evaluation
 # Keep Rate 0.9

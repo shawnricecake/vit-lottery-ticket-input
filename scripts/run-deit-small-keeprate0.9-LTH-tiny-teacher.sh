@@ -1,4 +1,4 @@
-cd ../evit/
+cd ../deit/
 
 # Train from scratch as LTH using the DeiT Tiny as "teacher"
 # Keep Rate 0.9

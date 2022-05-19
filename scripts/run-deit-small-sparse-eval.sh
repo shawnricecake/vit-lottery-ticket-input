@@ -1,4 +1,4 @@
-cd ../evit/
+cd ../deit/
 
 data_path="/home/ImageNet"
 save_path="../checkpoints/exp-deit-sparse-eval-temp"

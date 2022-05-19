@@ -191,7 +191,7 @@ def get_args_parser():
     parser.add_argument('--lottery', default='', help='run lottery experiment, and set the pretrained model path')
     parser.add_argument('--lottery-model-type', default='', help='teacher model type')
     parser.add_argument('--adjust-keep-rate', action='store_true', default=False,
-                        help='use evit original adjust keep rate function')
+                        help='use deit original adjust keep rate function')
     parser.add_argument('--random', action='store_true', help='run RR experiment')
     parser.add_argument('--random-fixed', action='store_true', help='run RR experiment with fixed random mask')
     parser.add_argument('--qkv-change', default=False, help='run RR experiment with q k v computation change')

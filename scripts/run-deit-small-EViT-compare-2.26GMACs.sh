@@ -1,4 +1,4 @@
-cd ../evit/
+cd ../deit/
 
 # Use EViT pretrain as ablation study
 

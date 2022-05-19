@@ -36,7 +36,7 @@ import sys
 import math
 
 sys.path.append("../")
-from evit.vision_transformer import deit_small_patch16_shrink_base, \
+from deit.vision_transformer import deit_small_patch16_shrink_base, \
     deit_tiny_patch16_shrink_base, deit_base_patch16_shrink_base
 
 ######################

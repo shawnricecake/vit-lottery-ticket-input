@@ -46,6 +46,13 @@ try:
 except AttributeError:
     pass
 
+######################################
+import sys
+sys.path.append("../")
+from deit.vision_transformer import deit_small_patch16_shrink_base, \
+    deit_tiny_patch16_shrink_base, deit_base_patch16_shrink_base
+######################################
+
 torch.backends.cudnn.benchmark = True
 _logger = logging.getLogger('train')
 

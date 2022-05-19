@@ -1,4 +1,4 @@
-cd ../evit/
+cd ../deit/
 
 # Train from scratch as LTH using the pretrained EViT model as "teacher"
 # Keep Rate 0.8

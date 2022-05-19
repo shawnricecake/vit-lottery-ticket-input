@@ -1,4 +1,4 @@
-cd ../evit/
+cd ../deit/
 
 # Train from scratch as RR using the random mask
 # Keep Rate 0.85

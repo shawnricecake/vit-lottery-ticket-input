@@ -1,4 +1,4 @@
-cd ../evit/
+cd ../deit/
 
 # Train as EViT, load pretrain model and finetune
 # Keep Rate 0.75

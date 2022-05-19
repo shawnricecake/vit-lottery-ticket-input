@@ -1,4 +1,4 @@
-cd ../evit/
+cd ../deit/
 
 data_path=${1:-"/home/ImageNet"}
 save_path="../checkpoints/exp-deit-base-dim576-pretrain"
