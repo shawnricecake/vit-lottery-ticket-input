@@ -329,6 +329,8 @@ group.add_argument('--log-wandb', action='store_true', default=False,
 # xuan:
 group.add_argument('--lottery', default='', type=str, metavar='PATH',
                    help='path to vit model')
+group.add_argument('--random', action='store_true', default=False,
+                   help='use random patch')
 group.add_argument("--base_keep_rate", default=0.9, type=float)
 
 
@@ -420,25 +422,27 @@ def main():
         args.num_classes = model.num_classes  # FIXME handle model default vs config num_classes more elegantly
 
     # xuan: create vit model -----------------
-    lottery_pretrained_model = create_model("deit_small_patch16_shrink_base",
-                                            base_keep_rate=args.base_keep_rate,
-                                            pretrained=False,
-                                            num_classes=1000,
-                                            drop_rate=0.0,
-                                            drop_path_rate=0.1,
-                                            drop_block_rate=None,
-                                            fuse_token=False,
-                                            img_size=(224, 224))
-    if args.lottery.startswith('https'):
-        checkpoint = torch.hub.load_state_dict_from_url(args.lottery, map_location='cpu', check_hash=True)
-    else:
-        checkpoint = torch.load(args.lottery, map_location='cpu')
-    checkpoint = checkpoint['model']
-    missing_keys, unexpected_keys = lottery_pretrained_model.load_state_dict(checkpoint, strict=False)
-    print('# missing keys=', missing_keys)
-    print('# unexpected keys=', unexpected_keys)
-    print('successfully loaded from given checkpoint weights:', args.lottery)
-    lottery_pretrained_model.cuda()
+    lottery_pretrained_model = None
+    if args.lottery != "":
+        lottery_pretrained_model = create_model("deit_small_patch16_shrink_base",
+                                                base_keep_rate=args.base_keep_rate,
+                                                pretrained=False,
+                                                num_classes=1000,
+                                                drop_rate=0.0,
+                                                drop_path_rate=0.1,
+                                                drop_block_rate=None,
+                                                fuse_token=False,
+                                                img_size=(224, 224))
+        if args.lottery.startswith('https'):
+            checkpoint = torch.hub.load_state_dict_from_url(args.lottery, map_location='cpu', check_hash=True)
+        else:
+            checkpoint = torch.load(args.lottery, map_location='cpu')
+        checkpoint = checkpoint['model']
+        missing_keys, unexpected_keys = lottery_pretrained_model.load_state_dict(checkpoint, strict=False)
+        print('# missing keys=', missing_keys)
+        print('# unexpected keys=', unexpected_keys)
+        print('successfully loaded from given checkpoint weights:', args.lottery)
+        lottery_pretrained_model.cuda()
     # -----------------------------------
 
     if args.grad_checkpointing:
