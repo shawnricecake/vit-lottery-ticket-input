@@ -16,7 +16,7 @@ mkdir -p ${save_dir}
 CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" \
 nohup \
 python3 -m torch.distributed.launch --nproc_per_node=8 --use_env \
-    main.py \
+    train_image_classification_imagenet_timm.py \
     --model resnet50 \
     --seed ${seed} \
     --lr ${lr]} \

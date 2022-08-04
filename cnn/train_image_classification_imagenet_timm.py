@@ -18,6 +18,13 @@ from collections import OrderedDict
 from contextlib import suppress
 from datetime import datetime
 
+######################################
+import sys
+sys.path.append("../")
+from deit.vision_transformer import deit_small_patch16_shrink_base, \
+    deit_tiny_patch16_shrink_base, deit_base_patch16_shrink_base
+######################################
+
 import torch
 import torch.nn as nn
 import torchvision.utils
