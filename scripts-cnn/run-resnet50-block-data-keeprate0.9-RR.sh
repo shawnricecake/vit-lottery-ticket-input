@@ -10,7 +10,7 @@ lr=0.2048
 keep_rate=0.9
 
 name=resnet50-${dataset}
-save_dir=../checkpoints/${name}-${epochs}epochs-bs${batch_size_per_gpu}/keeprate${keep_rate}-block-data-RR/
+save_dir=../checkpoints/${name}-${epochs}epochs-bs${batch_size_per_gpu}-lr${lr}/keeprate${keep_rate}-block-data-RR/
 mkdir -p ${save_dir}
 
 CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" \
