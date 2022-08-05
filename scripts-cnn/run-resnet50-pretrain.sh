@@ -19,7 +19,7 @@ python3 -m torch.distributed.launch --nproc_per_node=8 --use_env \
     train_image_classification_imagenet_timm.py \
     --model resnet50 \
     --seed ${seed} \
-    --lr ${lr]} \
+    --lr ${lr} \
     --epochs ${epochs} \
     --batch-size ${batch_size_per_gpu} \
     --output ${save_dir} \
