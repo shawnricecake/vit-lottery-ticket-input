@@ -29,7 +29,7 @@ python3 -m torch.distributed.launch --nproc_per_node=8 --use_env \
     --resume ../checkpoints-pretrain/${name}-${epochs}epochs-bs${batch_size_per_gpu}/pretrain/initial-model.pth \
     --lottery path_to_lottery_model \
     --base_keep_rate ${keep_rate} \
-> ../scripts-cnn/output-${name}-${epochs}epochs-bs${batch_size_per_gpu}-keeprate${keep_rate}-block-data-LTH.log 2>&1 &
+> ../scripts-cnn/output-${name}-${epochs}epochs-lr${lr}-bs${batch_size_per_gpu}-keeprate${keep_rate}-block-data-LTH.log 2>&1 &
 
 
 # comment deit/vision_transformer.py 790th row
