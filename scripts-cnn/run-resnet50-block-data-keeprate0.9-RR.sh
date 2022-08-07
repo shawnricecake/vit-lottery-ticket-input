@@ -2,7 +2,7 @@
 
 cd ../cnn/
 
-seed=3
+seed=914
 dataset="imagenet"
 epochs=90
 batch_size_per_gpu=128
