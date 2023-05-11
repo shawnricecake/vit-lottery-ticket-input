@@ -212,6 +212,16 @@ default_cfgs = {
             '/vit_base_patch16_224_1k_miil_84_4.pth',
         mean=(0, 0, 0), std=(1, 1, 1), crop_pct=0.875, interpolation='bilinear',
     ),
+
+    # ------------------------------
+    'deit_small_patch4_32': _cfg(
+        num_classes=10,
+        input_size=(3, 32, 32)
+    ),
+    'deit_tiny_patch4_32': _cfg(
+        num_classes=10,
+        input_size=(3, 32, 32)
+    ),
 }
 
 
@@ -1071,6 +1081,28 @@ def deit_small_patch16_shrink_base(pretrained=False, base_keep_rate=0.7, drop_lo
     model_kwargs = dict(patch_size=16, embed_dim=384, depth=12, num_heads=6, keep_rate=keep_rate)
     model_kwargs.update(kwargs)
     model = _create_vision_transformer('deit_small_patch16_224', pretrained=pretrained, **model_kwargs)
+    return model
+
+
+@register_model
+def deit_small_patch4_res32_shrink_base(pretrained=False, base_keep_rate=0.7, drop_loc=(3, 6, 9), **kwargs):
+    keep_rate = [1] * 12
+    for loc in drop_loc:
+        keep_rate[loc] = base_keep_rate
+    model_kwargs = dict(patch_size=4, embed_dim=384, depth=6, num_heads=8, keep_rate=keep_rate)
+    model_kwargs.update(kwargs)
+    model = _create_vision_transformer('deit_small_patch4_32', pretrained=pretrained, **model_kwargs)
+    return model
+
+
+@register_model
+def deit_tiny_patch4_res32_shrink_base(pretrained=False, base_keep_rate=0.7, drop_loc=(3, 6, 9), **kwargs):
+    keep_rate = [1] * 12
+    for loc in drop_loc:
+        keep_rate[loc] = base_keep_rate
+    model_kwargs = dict(patch_size=4, embed_dim=192, depth=4, num_heads=3, keep_rate=keep_rate)
+    model_kwargs.update(kwargs)
+    model = _create_vision_transformer('deit_tiny_patch4_32', pretrained=pretrained, **model_kwargs)
     return model
 
 

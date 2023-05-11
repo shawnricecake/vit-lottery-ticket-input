@@ -15,6 +15,9 @@ __all__ = [
     'deit_tiny_distilled_patch16_224', 'deit_small_distilled_patch16_224',
     'deit_base_distilled_patch16_224', 'deit_base_patch16_384',
     'deit_base_distilled_patch16_384',
+    'deit_small_patch4_32',
+    'deit_tiny_patch4_32',
+
 ]
 
 
@@ -87,6 +90,24 @@ def deit_small_patch16_224(pretrained=False, **kwargs):
             map_location="cpu", check_hash=True
         )
         model.load_state_dict(checkpoint["model"])
+    return model
+
+
+@register_model
+def deit_small_patch4_32(pretrained=False, **kwargs):
+    model = VisionTransformer(
+        patch_size=4, embed_dim=384, depth=6, num_heads=8, mlp_ratio=1, qkv_bias=True,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    model.default_cfg = _cfg()
+    return model
+
+
+@register_model
+def deit_tiny_patch4_32(pretrained=False, **kwargs):
+    model = VisionTransformer(
+        patch_size=4, embed_dim=192, depth=4, num_heads=3, mlp_ratio=1, qkv_bias=True,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    model.default_cfg = _cfg()
     return model
 
 
