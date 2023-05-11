@@ -1,6 +1,9 @@
-# Input Level Lottery Ticket
+# Data Level LTH for ViTs
 
+## Introduction 
+Code for paper ["Data Level Lottery Ticket Hypothesis for Vision Transformers"](https://arxiv.org/abs/2211.01484).
 
+This paper is accepted by IJCAI 2023.
 
 ## Preparation
 ### DeiT
